@@ -1,0 +1,11 @@
+﻿TOPIC
+	about_SPOPermissionReport
+	
+SHORT DESCRIPTION
+	Explains how to use the SPOPermissionReport powershell module
+	
+LONG DESCRIPTION
+	<Insert Content here>
+
+KEYWORDS
+	SPOPermissionReport
