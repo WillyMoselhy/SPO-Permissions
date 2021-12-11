@@ -24,7 +24,7 @@ $LoginInfo = [PSCustomObject]@{
     TenantID        = '1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1'
     TenantName      = 'm365x252065'
     AppID           = '9ce25227-4018-427e-8f8d-cbc3c0d19657'
-    CertificatePath = '.\Cert\PnP Rocks2.pfx' #This can be EncodedBase64
+    CertificatePath = 'C:\home\site\wwwroot\Cert\PnP Rocks2.pfx' #This can be EncodedBase64
 }
 
 
