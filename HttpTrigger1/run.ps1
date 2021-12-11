@@ -18,6 +18,10 @@ $body += (Get-Module -ListAvailable | Out-String -Width 999)
 $body += $env:PSModulePath
 $body += "r`n" + (Get-Location)
 
+$duration = Measure-Command -Expression {$result = Start-SPOPermissionCollection}
+Write-Host "Finished! That took only $duration"
+
+
 if ($name) {
     $body = "Hello, $name. This HTTP triggered function executed successfully."
 }
