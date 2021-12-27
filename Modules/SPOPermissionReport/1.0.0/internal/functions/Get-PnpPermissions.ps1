@@ -1,0 +1,175 @@
+Function Get-PnPPermissions {
+    [cmdletbinding()]
+    Param
+    (
+        [Parameter(Mandatory = $true)] [Microsoft.SharePoint.Client.SecurableObject] $Object,
+        [Parameter(Mandatory = $true)] [String] $ReportFile
+    )
+
+    #Determine the type of the object
+    Write-PSFMessage -Level Verbose -Message "Working on a new Object"
+    Switch ($Object.TypedObject.ToString()) {
+        "Microsoft.SharePoint.Client.Web" {
+            $ObjectType = "Site"
+            $ObjectURL = $Object.URL
+            $ObjectTitle = $Object.Title
+        }
+        "Microsoft.SharePoint.Client.ListItem" {
+            If ($Object.FileSystemObjectType -eq "Folder") {
+                $ObjectType = "Folder"
+                #Get the URL of the Folder
+                Get-PnPProperty -ClientObject $Object -Property Folder #Get-PnPProperty edits web objects.
+                $ObjectTitle = $Object.Folder.Name
+                $ObjectURL = $("{0}{1}" -f $Web.Url.Replace($Web.ServerRelativeUrl, ''), $Object.Folder.ServerRelativeUrl)
+            }
+            Else {
+                #File or List Item
+                #Get the URL of the Object
+                Get-PnPProperty -ClientObject $Object -Property File, ParentList
+                If ($null -ne $Object.File.Name) {
+                    $ObjectType = "File"
+                    $ObjectTitle = $Object.File.Name
+                    $ObjectURL = $("{0}{1}" -f $Web.Url.Replace($Web.ServerRelativeUrl, ''), $Object.File.ServerRelativeUrl)
+                }
+                else {
+
+                    $ObjectType = "List Item"
+                    $ObjectTitle = $Object["Title"]
+                    #Get the URL of the List Item
+                    $DefaultDisplayFormUrl = Get-PnPProperty -ClientObject $Object.ParentList -Property DefaultDisplayFormUrl
+                    $ObjectURL = $("{0}{1}?ID={2}" -f $Web.Url.Replace($Web.ServerRelativeUrl, ''), $DefaultDisplayFormUrl, $Object.ID)
+                }
+            }
+        }
+        Default {
+            $ObjectType = "List or Library"
+            $ObjectTitle = $Object.Title
+            #Get the URL of the List or Library
+            $RootFolder = Get-PnPProperty -ClientObject $Object -Property RootFolder
+            $ObjectURL = $("{0}{1}" -f $Web.Url.Replace($Web.ServerRelativeUrl, ''), $RootFolder.ServerRelativeUrl)
+        }
+    }
+    Write-PSFMessage -Level Verbose -Message "Object is a $ObjectType"
+    Write-PSFMessage -Level Verbose -Message "Getting permissions for $ObjectURL"
+
+    #Get permissions assigned to the object
+    Get-PnPProperty -ClientObject $Object -Property HasUniqueRoleAssignments, RoleAssignments
+
+    #Check if Object has unique permissions
+    $HasUniquePermissions = $Object.HasUniqueRoleAssignments
+
+    #Loop through each permission assigned and extract details
+    $PermissionCollection = @()
+    Write-PSFMessage -Level Verbose -Message "Object has $($Object.RoleAssignments.count) permissions"
+    $Object.RoleAssignments | ForEach-Object { Get-PnPProperty -ClientObject $_ -Property RoleDefinitionBindings, Member }
+    Foreach ($RoleAssignment in $Object.RoleAssignments) {
+        #Get the Permission Levels assigned and Member
+        #Get-PnPProperty -ClientObject $RoleAssignment -Property RoleDefinitionBindings, Member
+
+        #Get the Principal Type: User, SP Group, AD Group
+        $PermissionType = $RoleAssignment.Member.PrincipalType
+
+        #Get the Permission Levels assigned
+        $PermissionLevels = $RoleAssignment.RoleDefinitionBindings | Select-Object -ExpandProperty Name
+
+        #Remove Limited Access
+        $PermissionLevels = ($PermissionLevels | Where-Object { $_ -ne "Limited Access" }) -join ","
+
+        #Leave Principals with no Permissions
+        If ($PermissionLevels.Length -eq 0) { Continue }
+
+        #Get SharePoint group members
+        switch ($PermissionType) {
+            "SharePointGroup" {
+                #Get Group Members
+                Write-PSFMessage -Level Verbose -Message "Getting Members of SharePoint group: $($RoleAssignment.Member.LoginName)"
+
+                #Caching group members
+                if (($Script:Groups.Name | Where-Object {$_.Type -eq 'SharePointGroup'} )-notcontains $RoleAssignment.Member.LoginName ) {
+                    $GroupMembers = Get-PnPGroupMember -Identity $RoleAssignment.Member.LoginName
+                    $Script:Groups += [PSCustomObject]@{
+                        Name    = $RoleAssignment.Member.LoginName
+                        Type    = 'SharePointGroup'
+                        Members = $GroupMembers
+                    }
+                    Write-PSFMessage -Level Verbose -Message "Members added to cache"
+                }
+                else {
+                    $GroupMembers = ($Script:Groups | Where-Object { $_.Name -eq $RoleAssignment.Member.LoginName -and $_.Type -eq 'SharePointGroup'}).Members
+                    Write-PSFMessage -Level Verbose -Message "Members retrieved from cache"
+                }
+
+                #Leave Empty Groups
+                If ($GroupMembers.count -eq 0) { Continue }
+
+                $GroupUsers = ($GroupMembers | Select-Object -ExpandProperty Title) -join ","
+
+                #Add the Data to Object
+                $Permissions = [PSCustomObject]@{
+                    Object               = $ObjectType
+                    Title                = $ObjectTitle
+                    URL                  = $ObjectURL
+                    HasUniquePermissions = $HasUniquePermissions
+                    Users                = $GroupUsers
+                    Type                 = $PermissionType
+                    Permissions          = $PermissionLevels
+                    GrantedThrough       = "SharePoint Group: $($RoleAssignment.Member.LoginName)"
+                }
+            }
+            "SecurityGroup" {
+                #Get Group Members
+                Write-PSFMessage -Level Verbose -Message "Getting Members of Azure AD group: $($RoleAssignment.Member.Title)"
+
+                #Caching group members
+                if (($Script:Groups.Name | Where-Object {$_.Type -eq 'SecurityGroup'} )-notcontains $RoleAssignment.Member.Title ) {
+                    $GroupMembers = Get-GApiGroupMember -GroupName ($RoleAssignment.Member.Title -replace '\sMembers$', '')
+                    $Script:Groups += [PSCustomObject]@{
+                        Name    = $RoleAssignment.Member.Title
+                        Type    = 'SecurityGroup'
+                        Members = $GroupMembers
+                    }
+                    Write-PSFMessage -Level Verbose -Message "Members added to cache"
+                }
+                else {
+                    $GroupMembers = ($Script:Groups | Where-Object { $_.Name -eq $RoleAssignment.Member.Title -and $_.Type -eq 'SecurityGroup'}).Members
+                    Write-PSFMessage -Level Verbose -Message "Members retrieved from cache"
+                }
+
+                #Leave Empty Groups
+                If ($GroupMembers.count -eq 0) { Continue }
+
+                $GroupUsers = $GroupMembers -join ","
+
+                #Add the Data to Object
+                $Permissions = [PSCustomObject]@{
+                    Object               = $ObjectType
+                    Title                = $ObjectTitle
+                    URL                  = $ObjectURL
+                    HasUniquePermissions = $HasUniquePermissions
+                    Users                = $GroupUsers
+                    Type                 = $PermissionType
+                    Permissions          = $PermissionLevels
+                    GrantedThrough       = "Azure AD Group: $($RoleAssignment.Member.Title)"
+                }
+            }
+            Default {
+                #Add the Data to Object
+                Write-PSFMessage -Level Verbose -Message "Adding permissions for $($RoleAssignment.Member.Title)"
+                $Permissions = [PSCustomObject]@{
+                    Object               = $ObjectType
+                    Title                = $ObjectTitle
+                    URL                  = $ObjectURL
+                    HasUniquePermissions = $HasUniquePermissions
+                    Users                = $RoleAssignment.Member.Title
+                    Type                 = $PermissionType
+                    Permissions          = $PermissionLevels
+                    GrantedThrough       = 'Direct Permissions'
+                }
+            }
+        }
+        $PermissionCollection += $Permissions
+    }
+    #Export Permissions to CSV File
+    Write-PSFMessage -Level Verbose -Message "Appending Report: $ReportFile"
+    $PermissionCollection | Export-Csv $ReportFile -NoTypeInformation -Append
+}

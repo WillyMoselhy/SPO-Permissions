@@ -25,6 +25,7 @@ $LoginInfo = [PSCustomObject]@{
     TenantName      = 'm365x252065'
     AppID           = '9ce25227-4018-427e-8f8d-cbc3c0d19657'
     CertificatePath = 'C:\home\site\wwwroot\Cert\PnP Rocks2.pfx' #This can be EncodedBase64
+    BlobFunctionKey = 'https://saveblobfile.azurewebsites.net/api/HttpTrigger1?code=Sc2Cq8SCuWEC/7oBY0oVPqygpAwMILqXxPws2bOeXDmQzh5MavtcfA=='
 }
 
 
@@ -37,9 +38,23 @@ Write-Host "Graph API token valid to: $($script:MSALToken.ExpiresOn)"
 Connect-PnPOnline -Url "https://$($LoginInfo.TenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath -ErrorAction Stop
 Write-Host "Connected to PNP"
 
-Write-Host "Starting Collection"
+Write-Host "Getting all site collections"
+$SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn ("SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1")
+#Loop through each site collection
+ForEach ($Site in $SitesCollections) {
+    #Connect to site collection
+    $SiteConn = Connect-PnPOnline -Url $Site.Url -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath
+    Write-Host "Generating Report for Site:$($Site.Url)"
 
-$duration = Measure-Command -Expression {Start-SPOPermissionCollection}
+    #Call the Function for site collection
+    $reportFile = "$($Site.URL.Replace('https://','').Replace('/','_')).CSV"
+    Start-SPOPermissionCollection -SiteURL $Site.URL -ReportFile $reportFile -Recursive -ScanItemLevel -BlobFunctionKey $LoginInfo.BlobFunctionKey -Verbose # -IncludeInheritedPermissions
+
+    Disconnect-PnPOnline -Connection $SiteConn
+}
+
+
+
 
 Write-Host "Finished in: $duration"
 
@@ -47,8 +62,6 @@ Write-Host "Finished in: $duration"
 if ($name) {
     $body = "Hello, $name. This HTTP triggered function executed successfully."
 }
-
-Invoke-WebRequest -Uri
 
 # Associate values to output bindings by calling 'Push-OutputBinding'.
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{

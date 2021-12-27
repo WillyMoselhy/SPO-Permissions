@@ -6,9 +6,11 @@ function Start-SPOPermissionCollection {
         [Parameter(Mandatory = $false)] [String] $ReportFile,
         [Parameter(Mandatory = $false)] [switch] $Recursive,
         [Parameter(Mandatory = $false)] [switch] $ScanItemLevel,
-        [Parameter(Mandatory = $false)] [switch] $IncludeInheritedPermissions
+        [Parameter(Mandatory = $false)] [switch] $IncludeInheritedPermissions,
+        [Parameter(Mandatory = $false)] [string] $BlobFunctionKey
     )
-    Write-Host "Hello World!"
+    Write-Host "Getting all site collections"
+    $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn ("SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1")
 
     try {
         #Get the Web
@@ -29,7 +31,8 @@ function Start-SPOPermissionCollection {
             Permissions          = "Site Owner"
             GrantedThrough       = "Direct Permissions"
         }
-        $permissions | ConvertTo-Csv | Out-String -Width 999
+
+        Invoke-WebRequest -URI  $BlobFunctionKey -Headers @{filename = $ReportFile} -Body @{CSV = ( $permissions | ConvertTo-Csv | Out-String -Width 999) }
     }
     Catch {
         Write-Error "Error Generating Site Permission Report! $($_.Exception.Message)"
