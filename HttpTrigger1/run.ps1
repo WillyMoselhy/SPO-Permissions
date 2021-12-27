@@ -18,7 +18,7 @@ $body += (Get-Module -ListAvailable | Out-String -Width 999)
 $body += $env:PSModulePath
 $body += "r`n" + (Get-Location)
 
-#$duration = Measure-Command -Expression {$result = Start-SPOPermissionCollection}
+
 
 $LoginInfo = [PSCustomObject]@{
     TenantID        = '1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1'
@@ -37,11 +37,18 @@ Write-Host "Graph API token valid to: $($script:MSALToken.ExpiresOn)"
 Connect-PnPOnline -Url "https://$($LoginInfo.TenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath -ErrorAction Stop
 Write-Host "Connected to PNP"
 
+Write-Host "Starting Collection"
+
+$duration = Measure-Command -Expression {Start-SPOPermissionCollection}
+
+Write-Host "Finished in: $duration"
+
 
 if ($name) {
     $body = "Hello, $name. This HTTP triggered function executed successfully."
 }
 
+Invoke-WebRequest -Uri
 
 # Associate values to output bindings by calling 'Push-OutputBinding'.
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{

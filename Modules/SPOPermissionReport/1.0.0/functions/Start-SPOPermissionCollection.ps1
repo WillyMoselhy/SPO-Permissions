@@ -1,30 +1,43 @@
 function Start-SPOPermissionCollection {
-    [CmdletBinding()]
-    param (
-
+    [cmdletbinding()]
+    Param
+    (
+        [Parameter(Mandatory = $false)] [String] $SiteURL,
+        [Parameter(Mandatory = $false)] [String] $ReportFile,
+        [Parameter(Mandatory = $false)] [switch] $Recursive,
+        [Parameter(Mandatory = $false)] [switch] $ScanItemLevel,
+        [Parameter(Mandatory = $false)] [switch] $IncludeInheritedPermissions
     )
-
-    #Import Required Modules
     Write-Host "Hello World!"
-    #Connect to PNP and GraphAPI
 
-    $LoginInfo = [PSCustomObject]@{
-        TenantID        = '1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1'
-        TenantName      = 'm365x252065'
-        AppID           = '9ce25227-4018-427e-8f8d-cbc3c0d19657'
-        CertificatePath = 'C:\temp\PnP Rocks2.pfx' #This can be EncodedBase64
+    try {
+        #Get the Web
+        $web = Get-PnPWeb
+        Write-Host "Getting Site Collection Administrators..."
+        #Get Site Collection Administrators
+        $siteAdmins = Get-PnPSiteCollectionAdmin
+        $siteCollectionAdmins = ($siteAdmins | Select-Object -ExpandProperty Title) -join ","
+
+        #Add the Data to Object
+        $permissions = [PSCustomObject]@{
+            Object               = "Site Collection"
+            Title                = $web.Title
+            URL                  = $web.URL
+            HasUniquePermissions = "TRUE"
+            Users                = $siteCollectionAdmins
+            Type                 = "Site Collection Administrators"
+            Permissions          = "Site Owner"
+            GrantedThrough       = "Direct Permissions"
+        }
+        $permissions | ConvertTo-Csv | Out-String -Width 999
+    }
+    Catch {
+        Write-Error "Error Generating Site Permission Report! $($_.Exception.Message)"
+        throw $_
     }
 
 
-    $Cert = new-object security.cryptography.x509certificates.x509certificate2 -ArgumentList $LoginInfo.CertificatePath
-    write-host "Cert Converted"
-    ${env:msalps.dll.lenientLoading} = $true # Continue Module Import # This is to avoid assembly warning
-    $script:MSALToken = Get-MsalToken -ClientId 9ce25227-4018-427e-8f8d-cbc3c0d19657 -ClientCertificate $cert -TenantId 1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1 -ForceRefresh
-    Connect-PnPOnline -Url "https://$($LoginInfo.TenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath -ErrorAction Stop
-    write-host "Connected to PNP"
 
-    Write-Host $script:MSALToken.AccessToken
-    Write-Host "I've got the POWER!"
 
 
 
