@@ -29,17 +29,13 @@ $LoginInfo = [PSCustomObject]@{
 
 
 $Cert = new-object security.cryptography.x509certificates.x509certificate2 -ArgumentList $LoginInfo.CertificatePath
-write-host "Cert Converted"
+Write-Host "Cert Converted"
 
 $script:MSALToken = Get-MsalToken -ClientId 9ce25227-4018-427e-8f8d-cbc3c0d19657 -ClientCertificate $cert -TenantId 1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1 -ForceRefresh
-Write-Host $script:MSALToken.AccessToken
+Write-Host "Graph API token valid to: $($script:MSALToken.ExpiresOn)"
+
 Connect-PnPOnline -Url "https://$($LoginInfo.TenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath -ErrorAction Stop
-write-host "Connected to PNP"
-
-
-
-
-Write-Host "Finished! That took only $duration"
+Write-Host "Connected to PNP"
 
 
 if ($name) {
