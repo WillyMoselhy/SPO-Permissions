@@ -2,13 +2,15 @@ function Start-SPOPermissionCollection {
     [cmdletbinding()]
     Param
     (
-        [Parameter(Mandatory = $false)] [String] $SiteURL,
-        [Parameter(Mandatory = $false)] [String] $ReportFile,
+        [Parameter(Mandatory = $true)] [String] $SiteURL,
+        [Parameter(Mandatory = $true)] [String] $ReportFile,
         [Parameter(Mandatory = $false)] [switch] $Recursive,
         [Parameter(Mandatory = $false)] [switch] $ScanItemLevel,
         [Parameter(Mandatory = $false)] [switch] $IncludeInheritedPermissions,
-        [Parameter(Mandatory = $false)] [string] $BlobFunctionKey
+        [Parameter(Mandatory = $true)] [string] $GraphApiToken
     )
+    $script:GraphApiToken = $GraphApiToken
+
     Write-Host "Getting all site collections"
     $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn ("SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1")
 

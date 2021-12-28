@@ -24,5 +24,5 @@ function Connect-GApiAccount {
 
     $authResponse = Invoke-RestMethod @Params
 
-    $Script:GroupMemberToken = $authResponse.access_token
+    $Script:GraphApiToken = $authResponse.access_token
 }

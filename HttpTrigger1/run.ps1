@@ -5,6 +5,11 @@ param($Request, $TriggerMetadata)
 
 # Write to the Azure Functions log stream.
 Write-Host "PowerShell HTTP trigger function processed a request."
+# Associate values to output bindings by calling 'Push-OutputBinding'.
+Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+    StatusCode = [HttpStatusCode]::OK
+    Body = 'Function Started successfully. Collection will now begin.'
+})
 
 # Interact with query parameters or the body of the request.
 $name = $Request.Query.Name
@@ -32,7 +37,7 @@ $LoginInfo = [PSCustomObject]@{
 $Cert = new-object security.cryptography.x509certificates.x509certificate2 -ArgumentList $LoginInfo.CertificatePath
 Write-Host "Cert Converted"
 
-$script:MSALToken = Get-MsalToken -ClientId 9ce25227-4018-427e-8f8d-cbc3c0d19657 -ClientCertificate $cert -TenantId 1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1 -ForceRefresh
+$MsalToken = Get-MsalToken -ClientId 9ce25227-4018-427e-8f8d-cbc3c0d19657 -ClientCertificate $cert -TenantId 1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1 -ForceRefresh
 Write-Host "Graph API token valid to: $($script:MSALToken.ExpiresOn)"
 
 Connect-PnPOnline -Url "https://$($LoginInfo.TenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath -ErrorAction Stop
@@ -58,7 +63,7 @@ ForEach ($Site in $SitesCollections) {
 
 
     #Call the Function for site collection
-    Start-SPOPermissionCollection -SiteURL $Site.URL -ReportFile $reportFile -Recursive -ScanItemLevel -BlobFunctionKey $LoginInfo.BlobFunctionKey -Verbose # -IncludeInheritedPermissions
+    Start-SPOPermissionCollection -SiteURL $Site.URL -ReportFile $reportFile -Recursive -ScanItemLevel -GraphApiToken $msalToken.AccessToken -Verbose # -IncludeInheritedPermissions
     Disconnect-PnPOnline -Connection $SiteConn
 
     $csv = Get-Content -Path $reportFile | Out-String -Width 9999
@@ -79,9 +84,3 @@ Write-Host "Finished in: $duration"
 if ($name) {
     $body = "Hello, $name. This HTTP triggered function executed successfully."
 }
-
-# Associate values to output bindings by calling 'Push-OutputBinding'.
-Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
-    StatusCode = [HttpStatusCode]::OK
-    Body = $body
-})

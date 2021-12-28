@@ -6,7 +6,7 @@ function Get-GApiGroupMember {
 
     begin {
         $Headers = @{
-            'Authorization'    = "Bearer $($Script:GroupMemberToken)"
+            'Authorization'    = "Bearer $($Script:GraphApiToken)"
             'ConsistencyLevel' = 'Eventual'
         }
     }
