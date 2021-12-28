@@ -68,7 +68,12 @@ ForEach ($Site in $SitesCollections) {
 
     $csv = Get-Content -Path $reportFile | Out-String -Width 9999
 
-    $null = Invoke-Webrequest -URI  $LoginInfo.BlobFunctionKey -Headers @{filename = $filename} -Body @{CSV = $csv }
+    $body =convertto-json -inputObject @{
+        csv = $csv
+    }
+
+    $null = Invoke-RestMethod -URI  $LoginInfo.BlobFunctionKey -Headers @{filename = $filename} -Body $body -ContentType "application/json" -Method POST
+
     Write-Host "Uploaded file to Blob storage: $reportFile"
 
 
