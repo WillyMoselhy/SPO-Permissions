@@ -40,18 +40,35 @@ Write-Host "Connected to PNP"
 
 Write-Host "Getting all site collections"
 $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn ("SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1")
+
+$null = New-Item -Path .\temp -ItemType Directory -Force
+$timeStamp =  Get-Date -Format 'yyyyMMdd-HHmmss'
+$tempFolder = New-Item -Path ".\temp\$timeStamp" -ItemType Directory
+
+
 #Loop through each site collection
 ForEach ($Site in $SitesCollections) {
     #Connect to site collection
-    $SiteConn = Connect-PnPOnline -Url $Site.Url -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath
     Write-Host "Generating Report for Site:$($Site.Url)"
+    $filename = "$($Site.URL.Replace('https://','').Replace('/','_')).CSV"
+    $reportFile = Join-Path -Path $tempFolder.FullName -ChildPath $filename
+    Write-Host "Report will be stored temporarily as: $reportFile"
+
+    $SiteConn = Connect-PnPOnline -Url $Site.Url -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath
+
 
     #Call the Function for site collection
-    $reportFile = "$($Site.URL.Replace('https://','').Replace('/','_')).CSV"
     Start-SPOPermissionCollection -SiteURL $Site.URL -ReportFile $reportFile -Recursive -ScanItemLevel -BlobFunctionKey $LoginInfo.BlobFunctionKey -Verbose # -IncludeInheritedPermissions
-
     Disconnect-PnPOnline -Connection $SiteConn
+
+    $csv = Get-Content -Path $reportFile | Out-String -Width 9999
+
+    $null = Invoke-Webrequest -URI  $LoginInfo.BlobFunctionKey -Headers @{filename = $filename} -Body @{CSV = $csv }
+    Write-Host "Uploaded file to Blob storage: $reportFile"
+
+
 }
+Remove-Item -Path $tempFolder
 
 
 

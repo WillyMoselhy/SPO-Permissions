@@ -32,7 +32,11 @@ function Start-SPOPermissionCollection {
             GrantedThrough       = "Direct Permissions"
         }
 
-        Invoke-WebRequest -URI  $BlobFunctionKey -Headers @{filename = $ReportFile} -Body @{CSV = ( $permissions | ConvertTo-Csv | Out-String -Width 999) }
+        $permissions | Export-Csv -Path $ReportFile
+
+        Get-PnPWebPermission -Web $Web -ReportFile $ReportFile -Recursive:$Recursive -ScanItemLevel:$ScanItemLevel -IncludeInheritedPermissions:$IncludeInheritedPermissions
+        Write-Host "*** Site Permission Report Generated Successfully!***"
+
     }
     Catch {
         Write-Error "Error Generating Site Permission Report! $($_.Exception.Message)"
