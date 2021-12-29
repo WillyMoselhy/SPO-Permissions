@@ -78,7 +78,7 @@ ForEach ($Site in $SitesCollections) {
 
 
 }
-Remove-Item -Path $tempFolder
+Remove-Item -Path $tempFolder -Force
 
 
 
