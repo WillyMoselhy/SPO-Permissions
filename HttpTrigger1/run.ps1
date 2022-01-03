@@ -26,11 +26,11 @@ $body += "r`n" + (Get-Location)
 
 
 $LoginInfo = [PSCustomObject]@{
-    TenantID        = '1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1'
-    TenantName      = 'm365x252065'
-    AppID           = '9ce25227-4018-427e-8f8d-cbc3c0d19657'
+    TenantID        = $env:_TenantID
+    TenantName      = $env:_TenantName
+    AppID           = $env:_AppID
     CertificatePath = 'C:\home\site\wwwroot\Cert\PnP Rocks2.pfx' #This can be EncodedBase64
-    BlobFunctionKey = 'https://saveblobfile.azurewebsites.net/api/HttpTrigger1?code=Sc2Cq8SCuWEC/7oBY0oVPqygpAwMILqXxPws2bOeXDmQzh5MavtcfA=='
+    BlobFunctionKey = $env:_SaveBlobFunction
 }
 
 
@@ -38,7 +38,7 @@ $Cert = new-object security.cryptography.x509certificates.x509certificate2 -Argu
 Write-Host "Cert Converted"
 
 $MsalToken = Get-MsalToken -ClientId 9ce25227-4018-427e-8f8d-cbc3c0d19657 -ClientCertificate $cert -TenantId 1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1 -ForceRefresh
-Write-Host "Graph API token valid to: $($script:MSALToken.ExpiresOn)"
+Write-Host "Graph API token valid to: $($MSALToken.ExpiresOn)"
 
 Connect-PnPOnline -Url "https://$($LoginInfo.TenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath -ErrorAction Stop
 Write-Host "Connected to PNP"
@@ -78,14 +78,4 @@ ForEach ($Site in $SitesCollections) {
 
 
 }
-Remove-Item -Path $tempFolder -Force
-
-
-
-
-Write-Host "Finished in: $duration"
-
-
-if ($name) {
-    $body = "Hello, $name. This HTTP triggered function executed successfully."
-}
+Remove-Item -Path $tempFolder -Force -Confirm:$false
