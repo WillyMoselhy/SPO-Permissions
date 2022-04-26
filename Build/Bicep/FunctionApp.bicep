@@ -1,6 +1,6 @@
 // Parameters
-param StorageAccountName string = 'safuncspopermissions01'
-param FunctionAppName string = 'func-SPOPermission-01'
+param StorageAccountName string
+param FunctionAppName string
 param Location string = resourceGroup().location
 
 /*
