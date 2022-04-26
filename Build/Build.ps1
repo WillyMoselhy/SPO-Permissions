@@ -20,3 +20,7 @@ $deploymentParams = @{
 }
 $bicepDeployment = New-AzResourceGroupDeployment @deploymentParams
 $msiID = $bicepDeployment.Outputs.msiID.Value
+
+
+$publishProfile = Get-AzWebAppPublishingProfile -ResourceGroupName $RGName -Name 'func-SPOPermission-01/slots/dev'
+$publishProfile | scb
