@@ -26,4 +26,4 @@ jobs:
           app-name: 'func-SPOPermission-01'
           slot-name: 'dev'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_73D4F9021BD7447DB8E654D7C988BD68 }}
+          publish-profile: ${{ secrets.PUBLISH_PROFILE_DEV }}
