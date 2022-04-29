@@ -7,4 +7,5 @@
     'PSFramework'    = '1.*'
     'PnP.PowerShell' = '1.*'
     'MSAL.PS'        = '4.*'
+    'Az.KeyVault'    = '4.*'
 }

@@ -33,9 +33,10 @@ $LoginInfo = [PSCustomObject]@{
     BlobFunctionKey = $env:_SaveBlobFunction
 }
 
-
-$Cert = new-object security.cryptography.x509certificates.x509certificate2 -ArgumentList $LoginInfo.CertificatePath
-Write-Host "Cert Converted"
+$Cert = Get-AzKeyVaultSecret -ResourceId $env:PnPPowerShell_KeyVaultId -Name PnPPowerShell -AsPlainText
+#DELETE $Cert = new-object security.cryptography.x509certificates.x509certificate2 -ArgumentList $LoginInfo.CertificatePath
+#DELETE Write-Host "Cert Converted"
+Write-Host "Cert Obtained"
 
 $MsalToken = Get-MsalToken -ClientId 9ce25227-4018-427e-8f8d-cbc3c0d19657 -ClientCertificate $cert -TenantId 1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1 -ForceRefresh
 Write-Host "Graph API token valid to: $($MSALToken.ExpiresOn)"
