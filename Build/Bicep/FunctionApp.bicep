@@ -115,6 +115,10 @@ resource devSlot 'Microsoft.Web/sites/slots@2021-03-01' ={
   properties:{
     enabled: true
   }
+  identity:{
+    type:'SystemAssigned'
+  }
 }
 
-output msiID string = functionApp.identity.principalId
+output msiIDprod string = functionApp.identity.principalId
+output msiIDdev string = devSlot.identity.principalId
