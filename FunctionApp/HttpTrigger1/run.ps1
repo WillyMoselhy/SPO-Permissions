@@ -33,6 +33,7 @@ $LoginInfo = [PSCustomObject]@{
     BlobFunctionKey = $env:_SaveBlobFunction
 }
 
+Write-Host (Get-ChildItem -Path env: | Out-String)
 $Cert = Get-AzKeyVaultSecret -ResourceId $env:PnPPowerShell_KeyVaultId -Name PnPPowerShell -AsPlainText
 #DELETE $Cert = new-object security.cryptography.x509certificates.x509certificate2 -ArgumentList $LoginInfo.CertificatePath
 #DELETE Write-Host "Cert Converted"
