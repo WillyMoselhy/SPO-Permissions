@@ -24,12 +24,12 @@ $deploymentParams = @{
 $bicepDeployment = New-AzResourceGroupDeployment @deploymentParams
 # Get the function app MSI and publish Profile
 
-$msiID = $bicepDeployment.Outputs.msiIDprod.Value
+$msiIDprod = $bicepDeployment.Outputs.msiIDprod.Value
 $msiIDdev = $bicepDeployment.Outputs.msiIDdev.Value
 $publishProfile = Get-AzWebAppPublishingProfile -ResourceGroupName $RGName -Name "$FunctionAppName/slots/dev"
 
 # We are not currently automatically adding teh publish Profile to GitHub Secret Actions, so asking the user to do it.
-$publishProfile | scb
+$publishProfile | Set-Clipboard
 Read-Host "Function App Publish Profile is in clipboard, please paste it as a new GitHub Secrets"
 # Now we need to edit the yml file to publish the function app
 
@@ -45,9 +45,9 @@ $msiSP = Get-MgServicePrincipal -ServicePrincipalId $msiIDdev # This is obtained
 $msGraphPermissions = @(
     'Directory.Read.All' #Used to read user and group permissions
 )
-$msGraphAppRoles = $graphSP.AppRoles | where { $_.Value -in $msGraphPermissions }
+$msGraphAppRoles = $graphSP.AppRoles | Where-Object { $_.Value -in $msGraphPermissions }
 Get-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $msiSP.Id # This is check what permissions are currently assigned
-$msGraphAppRoles | foreach {
+$msGraphAppRoles | ForEach-Object {
     $params = @{
         PrincipalId = $msiSP.Id
         ResourceId  = $graphSP.Id
