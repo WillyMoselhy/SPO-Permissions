@@ -42,8 +42,8 @@ Write-Host "Got tenant information: $tenantId - $tenantName - $tenantFQDN"
 $cert = Get-AzKeyVaultSecret -ResourceId $env:PnPPowerShell_KeyVaultId -Name PnPPowerShell -AsPlainText
 Write-Host "Cert Obtained from keyvault"
 
-$MsalToken = Get-MsalToken -ClientId 2e1fee6b-7fe5-48ac-b51a-da35e149f1c5 -ClientCertificate $cert -TenantId $tenantId -ForceRefresh
-Write-Host "Graph API token valid to: $($MSALToken.ExpiresOn)"
+#$MsalToken = Get-MsalToken -ClientId 2e1fee6b-7fe5-48ac-b51a-da35e149f1c5 -ClientCertificate $cert -TenantId $tenantId -ForceRefresh
+#Write-Host "Graph API token valid to: $($MSALToken.ExpiresOn)"
 
 #Connect-PnPOnline -Url "https://$($tenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant $tenantFQDN -CertificatePath $LoginInfo.CertificatePath -ErrorAction Stop
 Connect-PnPOnline -Url "https://$($tenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant $tenantFQDN -CertificateBase64Encoded $cert -ErrorAction Stop
