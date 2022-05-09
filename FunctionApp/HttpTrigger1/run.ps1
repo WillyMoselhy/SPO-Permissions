@@ -26,23 +26,28 @@ $body += "r`n" + (Get-Location)
 
 
 $LoginInfo = [PSCustomObject]@{
-    TenantID        = $env:_TenantID
-    TenantName      = $env:_TenantName
-    AppID           = $env:_AppID
+    #TenantID        = $env:_TenantID
+    #TenantName      = $env:_TenantName
+    AppID           = '2e1fee6b-7fe5-48ac-b51a-da35e149f1c5'# $env:_AppID
     CertificatePath = 'C:\home\site\wwwroot\Cert\PnP Rocks2.pfx' #This can be EncodedBase64
     BlobFunctionKey = $env:_SaveBlobFunction
 }
 
-Write-Host (Get-ChildItem -Path env: | Out-String)
-$Cert = Get-AzKeyVaultSecret -ResourceId $env:PnPPowerShell_KeyVaultId -Name PnPPowerShell -AsPlainText
-#DELETE $Cert = new-object security.cryptography.x509certificates.x509certificate2 -ArgumentList $LoginInfo.CertificatePath
-#DELETE Write-Host "Cert Converted"
-Write-Host "Cert Obtained"
+$azTenant = Get-AzTenant
+$tenantId = $azTenant.TenantId
+$tenantFQDN = $azTenant.DefaultDomain
+$tenantName = $tenantFQDN -replace "(.+)\..+\..+",'$1'
+Write-Host "Got tenant information: $tenantId - $tenantName - $tenantFQDN"
 
-$MsalToken = Get-MsalToken -ClientId 9ce25227-4018-427e-8f8d-cbc3c0d19657 -ClientCertificate $cert -TenantId 1aeaebf6-dfc4-49c8-a843-cc2b8d54a9b1 -ForceRefresh
+$cert = Get-AzKeyVaultSecret -ResourceId $env:PnPPowerShell_KeyVaultId -Name PnPPowerShell -AsPlainText
+Write-Host "Cert Obtained from keyvault"
+
+$MsalToken = Get-MsalToken -ClientId 2e1fee6b-7fe5-48ac-b51a-da35e149f1c5 -ClientCertificate $cert -TenantId $tenantId -ForceRefresh
 Write-Host "Graph API token valid to: $($MSALToken.ExpiresOn)"
 
-Connect-PnPOnline -ManagedIdentity  # -Url "https://$($LoginInfo.TenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath -ErrorAction Stop
+#Connect-PnPOnline -Url "https://$($tenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant $tenantFQDN -CertificatePath $LoginInfo.CertificatePath -ErrorAction Stop
+Connect-PnPOnline -Url "https://$($tenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant $tenantFQDN -CertificateBase64Encoded $cert -ErrorAction Stop
+
 Write-Host "Connected to PNP"
 
 Write-Host "Getting all site collections"
@@ -61,7 +66,7 @@ ForEach ($Site in $SitesCollections) {
     $reportFile = Join-Path -Path $tempFolder.FullName -ChildPath $filename
     Write-Host "Report will be stored temporarily as: $reportFile"
 
-    $SiteConn = Connect-PnPOnline -Url $Site.Url -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath
+    $SiteConn = Connect-PnPOnline -Url $Site.Url -ClientId $LoginInfo.AppID -Tenant $azTenant.DefaultDomain -CertificatePath $LoginInfo.CertificatePath
 
 
     #Call the Function for site collection

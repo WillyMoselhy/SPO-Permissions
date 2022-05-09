@@ -46,12 +46,15 @@ $msiIDs | ForEach-Object {
 
 #endregion
 
+#region: Github publishing
 $publishProfile = Get-AzWebAppPublishingProfile -ResourceGroupName $RGName -Name "$FunctionAppName/slots/dev"
 
 # We are not currently automatically adding thh publish Profile to GitHub Secret Actions, so asking the user to do it.
 $publishProfile | Set-Clipboard
 Read-Host "Function App Publish Profile is in clipboard, please paste it as a new GitHub Secrets"
 # Now we need to edit the yml file to publish the function app
+
+#endregion
 
 #region: Setup PnP PowerShell
 Import-Module PnP.PowerShell
