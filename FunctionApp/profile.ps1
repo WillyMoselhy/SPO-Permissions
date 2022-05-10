@@ -14,9 +14,16 @@
 if ($env:MSI_SECRET) {
     Disable-AzContextAutosave -Scope Process | Out-Null
     Connect-AzAccount -Identity
+
+    Write-Host "Getting Token as MSI"
+    Write-Host "Getting Microsoft Graph Token"
+    $resourceURI = "https://graph.microsoft.com"
+    $tokenAuthURI = $env:IDENTITY_ENDPOINT + "?resource=$resourceURI&api-version=2019-08-01"
+    $tokenResponse = Invoke-RestMethod -Method Get -Headers @{"X-IDENTITY-HEADER" = "$env:IDENTITY_HEADER" } -Uri $tokenAuthURI
+    $mgToken = $tokenResponse.access_token
 }
 else{
-    Connect-AzAccount -ApplicationId -cert
+    # THIS is for offline testing - using a Test SP
 }
 
 # Uncomment the next line to enable legacy AzureRm alias in Azure PowerShell.

@@ -45,10 +45,5 @@ function Start-SPOPermissionCollection {
         throw $_
     }
 
-
-
-
-
-
     #Collect Report Data
 }
