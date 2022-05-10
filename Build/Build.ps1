@@ -129,7 +129,7 @@ Connect-MgGraph -Scopes Application.ReadWrite.All, Directory.Read.All, Directory
 
 $GraphAppId = "00000003-0000-0000-c000-000000000000"
 $graphSP = Get-MgServicePrincipal -Search "AppId:$GraphAppId" -ConsistencyLevel eventual
-$msiSP = Get-MgServicePrincipal -ServicePrincipalId $msiIDdev # This is obtained while deploying the function RG, if not get it from Azure Portal. Note: there is one for dev and one for prod
+$msiSP = Get-MgServicePrincipal -ServicePrincipalId '082d0922-03a4-4e55-b0ee-089e5dd3a6d0' $msiIDdev # This is obtained while deploying the function RG, if not get it from Azure Portal. Note: there is one for dev and one for prod
 $msGraphPermissions = @(
     'Directory.Read.All' #Used to read user and group permissions
 )
