@@ -35,7 +35,7 @@ $LoginInfo = [PSCustomObject]@{
 
 $azTenant = Get-AzTenant
 $tenantId = $azTenant.TenantId
-$tenantFQDN = $azTenant.DefaultDomain
+$tenantFQDN = 'M365x21720695.onmicrosoft.com'  # $azTenant.DefaultDomain
 $tenantName = $tenantFQDN -replace "(.+)\..+\..+",'$1'
 Write-Host "Got tenant information: $tenantId - $tenantName - $tenantFQDN"
 
