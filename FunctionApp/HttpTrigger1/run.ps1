@@ -7,9 +7,9 @@ param($Request, $TriggerMetadata)
 Write-Host "PowerShell HTTP trigger function processed a request."
 # Associate values to output bindings by calling 'Push-OutputBinding'.
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
-    StatusCode = [HttpStatusCode]::OK
-    Body = 'Function Started successfully. Collection will now begin.'
-})
+        StatusCode = [HttpStatusCode]::OK
+        Body       = 'Function Started successfully. Collection will now begin.'
+    })
 
 # Interact with query parameters or the body of the request.
 $name = $Request.Query.Name
@@ -36,7 +36,7 @@ $LoginInfo = [PSCustomObject]@{
 $azTenant = Get-AzTenant
 $tenantId = $azTenant.TenantId
 $tenantFQDN = 'M365x21720695.onmicrosoft.com'  # $azTenant.DefaultDomain
-$tenantName = $tenantFQDN -replace "(.+)\..+\..+",'$1'
+$tenantName = $tenantFQDN -replace "(.+)\..+\..+", '$1'
 Write-Host "Got tenant information: $tenantId - $tenantName - $tenantFQDN"
 
 #$cert = Get-AzKeyVaultSecret -ResourceId $env:PnPPowerShell_KeyVaultId -Name PnPPowerShell -AsPlainText
@@ -57,7 +57,7 @@ Write-Host "Getting all site collections"
 $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn ("SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1")
 
 $null = New-Item -Path .\temp -ItemType Directory -Force
-$timeStamp =  Get-Date -Format 'yyyyMMdd-HHmmss'
+$timeStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $tempFolder = New-Item -Path ".\temp\$timeStamp" -ItemType Directory
 
 
@@ -78,11 +78,29 @@ ForEach ($Site in $SitesCollections) {
 
     $csv = Get-Content -Path $reportFile | Out-String -Width 9999
 
-    $body =convertto-json -inputObject @{
+    $body = ConvertTo-Json -InputObject @{
         csv = $csv
     }
 
-    $null = Invoke-RestMethod -URI  $LoginInfo.BlobFunctionKey -Headers @{filename = $filename} -Body $body -ContentType "application/json" -Method POST
+    # Storage Token
+    Write-Host "Getting Storage Token"
+    $resourceURI = "https://storage.azure.com"
+    $tokenAuthURI = $env:IDENTITY_ENDPOINT + "?resource=$resourceURI&api-version=2019-08-01"
+    $tokenResponse = Invoke-RestMethod -Method Get -Headers @{"X-IDENTITY-HEADER" = "$env:IDENTITY_HEADER" } -Uri $tokenAuthURI
+    $storageToken = $tokenResponse.access_token
+
+    $headers = @{
+        Authorization    = "Bearer $env:storageToken"
+        'x-ms-version'   = '2021-04-10'
+        'x-ms-date'      = '{0:R}' -f (Get-Date).ToUniversalTime()
+        'x-ms-blob-type' = 'BlockBlob '
+    }
+
+    $url = "https://safuncspopermissions01.blob.core.windows.net/output/$filename" # TODO: Change this to an environment variable
+
+    Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body -ContentType "application/json"
+
+    #$null = Invoke-RestMethod -Uri $LoginInfo.BlobFunctionKey -Headers @{filename = $filename } -Body $body -ContentType "application/json" -Method POST
 
     Write-Host "Uploaded file to Blob storage: $reportFile"
 
