@@ -90,7 +90,7 @@ ForEach ($Site in $SitesCollections) {
     $storageToken = $tokenResponse.access_token
 
     $headers = @{
-        Authorization    = "Bearer $env:storageToken"
+        Authorization    = "Bearer $storageToken"
         'x-ms-version'   = '2021-04-10'
         'x-ms-date'      = '{0:R}' -f (Get-Date).ToUniversalTime()
         'x-ms-blob-type' = 'BlockBlob '
