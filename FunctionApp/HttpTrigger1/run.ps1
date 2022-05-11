@@ -77,10 +77,10 @@ ForEach ($Site in $SitesCollections) {
     Disconnect-PnPOnline -Connection $SiteConn
 
     $csv = Get-Content -Path $reportFile | Out-String -Width 9999
-
-    $body = ConvertTo-Json -InputObject @{
-        csv = $csv
-    }
+    $body = $csv
+    #$body = ConvertTo-Json -InputObject @{
+    #    csv = $csv
+    #}
 
     # Storage Token
     Write-Host "Getting Storage Token"
@@ -98,7 +98,7 @@ ForEach ($Site in $SitesCollections) {
 
     $url = "https://safuncspopermissions01.blob.core.windows.net/output/$filename" # TODO: Change this to an environment variable
 
-    Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body -ContentType "application/json"
+    Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body #-ContentType "application/json"
 
     #$null = Invoke-RestMethod -Uri $LoginInfo.BlobFunctionKey -Headers @{filename = $filename } -Body $body -ContentType "application/json" -Method POST
 
