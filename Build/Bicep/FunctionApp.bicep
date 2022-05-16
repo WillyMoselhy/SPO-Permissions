@@ -5,13 +5,13 @@ The function app is made up of:
 3- Log Analytics Workspace
 4- Application Insights (which requires a log analytics workspace)
 5- Function App
-6- Function App Dev slot
 7 - Keyvault to store PnP App certificate
 */
 
 // Parameters
 param StorageAccountName string
 param FunctionAppName string
+param KeyVaultName string
 param Location string = resourceGroup().location
 param AccountId string
 
@@ -121,24 +121,8 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
   }
 }
 
-resource devSlot 'Microsoft.Web/sites/slots@2021-03-01' = {
-  name: '${functionApp.name}/dev'
-  location: Location
-  kind: 'functionApp'
-  properties: {
-    enabled: true
-    siteConfig: {
-      appSettings: functionAppSettings
-
-    }
-  }
-  identity: {
-    type: 'SystemAssigned'
-  }
-}
-
 resource keyVault 'Microsoft.KeyVault/vaults@2021-10-01' = {
-  name: '${FunctionAppName}-kv'
+  name: KeyVaultName
   location: Location
   properties: {
     tenantId: subscription().tenantId
@@ -149,6 +133,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-10-01' = {
     }
   }
 }
+
 resource keyVaultAdminRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
   scope: keyVault
   name: guid(keyVault.id, AccountId, keyVaultAdministratorRoleId)
@@ -159,6 +144,5 @@ resource keyVaultAdminRoleAssignment 'Microsoft.Authorization/roleAssignments@20
   }
 }
 
-output msiIDprod string = functionApp.identity.principalId
-output msiIDdev string = devSlot.identity.principalId
+output msiID string = functionApp.identity.principalId
 output keyvault string = keyVault.id

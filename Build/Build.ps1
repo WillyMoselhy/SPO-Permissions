@@ -1,13 +1,17 @@
 #region: Create Azure Resources
 # Parameters
-$Location = 'EastUS'
-$RGName = 'rg-SPOPermissions-01'
-$FunctionAppName = 'func-SPOPermission-01'
-$StorageAccountName = 'safuncspopermissions01'
+$Location = 'SouthAfricaNorth'
+$RGName = 'RGP-ECLOSIA-SPOREP-PROD-01'
+$FunctionAppName = 'func-ecl-SPOPerm-01'
+$StorageAccountName = 'saeclfuncspoperm0122'
+$KeyVaultName =       'funcecpSPOPerm01kv22516'
 
+# Validate inputs
+if($KeyVaultName.Length -gt 24) {Throw "Keyvault name too long"}
+if($StorageAccountName.Length -gt 24) {Throw "Keyvault name too long"}
 
 # Login in to Azure using the right subscription
-Connect-AzAccount -UseDeviceAuthentication
+Connect-AzAccount #-UseDeviceAuthentication
 $subscription = Get-AzSubscription | Out-GridView -OutputMode Single -Title 'Select Target Subscription'
 $azContext = Set-AzContext -SubscriptionObject $subscription
 
@@ -24,22 +28,23 @@ $deploymentParams = @{
     TemplateFile       = '.\Build\Bicep\FunctionApp.bicep'
     FunctionAppName    = $FunctionAppName
     StorageAccountName = $StorageAccountName
+    KeyVaultName       = $KeyVaultName
     AccountId          = $azAccount.Id
     Verbose            = $true
 }
 $bicepDeployment = New-AzResourceGroupDeployment @deploymentParams
 # Get the function app MSI and publish Profile
 
-#TODD: Convert this to array at output from bicep
-$msiIDs = @($bicepDeployment.Outputs.msiIDprod.Value,$bicepDeployment.Outputs.msiIDdev.Value )
+
+$msiIDs = $bicepDeployment.Outputs.msiID.Value
 
 # Update permissions for MSI(s) to access key vault
 $msiIDs | ForEach-Object {
     $appId = (Get-AzADServicePrincipal -ObjectId $_).AppId
-    if(-Not (Get-AzRoleAssignment -Scope $bicepDeployment.Outputs.keyvault.Value -RoleDefinitionName 'Key Vault Secrets User' -ObjectId $appId)){
+    if (-Not (Get-AzRoleAssignment -Scope $bicepDeployment.Outputs.keyvault.Value -RoleDefinitionName 'Key Vault Secrets User' -ObjectId $appId)) {
         New-AzRoleAssignment -ApplicationId $appId -RoleDefinitionName 'Key Vault Secrets User' -Scope $bicepDeployment.Outputs.keyvault.Value
     }
-    else{
+    else {
         "Permission is already applied"
     }
 }
@@ -47,7 +52,7 @@ $msiIDs | ForEach-Object {
 #endregion
 
 #region: Github publishing
-$publishProfile = Get-AzWebAppPublishingProfile -ResourceGroupName $RGName -Name "$FunctionAppName/slots/dev"
+$publishProfile = Get-AzWebAppPublishingProfile -ResourceGroupName $RGName -Name "$FunctionAppName"
 
 # We are not currently automatically adding thh publish Profile to GitHub Secret Actions, so asking the user to do it.
 $publishProfile | Set-Clipboard
