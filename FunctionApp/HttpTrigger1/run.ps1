@@ -25,31 +25,30 @@ $body += "r`n" + (Get-Location)
 
 
 
-$LoginInfo = [PSCustomObject]@{
+#$LoginInfo = [PSCustomObject]@{
     #TenantID        = $env:_TenantID
     #TenantName      = $env:_TenantName
-    AppID           = '2e1fee6b-7fe5-48ac-b51a-da35e149f1c5'# $env:_AppID
-    CertificatePath = 'C:\home\site\wwwroot\Cert\PnP Rocks2.pfx' #This can be EncodedBase64
-    BlobFunctionKey = $env:_SaveBlobFunction
-}
+    #AppID           = '2e1fee6b-7fe5-48ac-b51a-da35e149f1c5'# $env:_AppID
+    #CertificatePath = 'C:\home\site\wwwroot\Cert\PnP Rocks2.pfx' #This can be EncodedBase64
+    #BlobFunctionKey = $env:_SaveBlobFunction
+#}
 
 $azTenant = Get-AzTenant
 $tenantId = $azTenant.TenantId
 $tenantFQDN = $env:_AZTenantDefaultDomain  
-$tenantName = $tenantFQDN -replace "(.+)\..+\..+", '$1'
-Write-Host "Got tenant information: $tenantId - $tenantName - $tenantFQDN"
+Write-Host "Got tenant information: $tenantId - $tenantFQDN"
 
 #$cert = Get-AzKeyVaultSecret -ResourceId $env:PnPPowerShell_KeyVaultId -Name PnPPowerShell -AsPlainText
 #Write-Host "Cert Obtained from keyvault"
 
 $certBase64 = Get-AzKeyVaultSecret -ResourceId $env:_PnPPowerShell_KeyVaultId -Name $env:_PnPApplicationName -AsPlainText
-
+Write-Host "Got PnP Application certificate as Base64"
 
 #$MsalToken = Get-MsalToken -ClientId $ClientId  -ClientCertificate $certBase64 -TenantId $tenantId -ForceRefresh
 #Write-Host "Graph API token valid to: $($MSALToken.ExpiresOn)"
 
 
-Connect-PnPOnline -Url $env:_SharePointDomain -ClientId $env:_PnPClientId -Tenant $tenantFQDN -CertificateBase64Encoded $certBase64 -ErrorAction Stop
+Connect-PnPOnline -Url "https://$env:_SharePointDomain" -ClientId $env:_PnPClientId -Tenant $tenantFQDN -CertificateBase64Encoded $certBase64 -ErrorAction Stop
 
 Write-Host "Connected to PNP"
 
