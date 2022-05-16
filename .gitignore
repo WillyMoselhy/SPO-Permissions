@@ -4,7 +4,8 @@ bin
 obj
 appsettings.json
 local.settings.json
-
+*.cer
+*.pfx
 # Azurite artifacts
 __blobstorage__
 __queuestorage__

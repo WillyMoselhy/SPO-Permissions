@@ -14,10 +14,13 @@ param FunctionAppName string
 param KeyVaultName string
 param Location string = resourceGroup().location
 param AccountId string
+param AZTenantDefaultDomain string
+param SharePointDomain string
+param PnPClientID string
+param PnPApplicationName string
 
 // Variables
 var keyVaultAdministratorRoleId = '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Authorization/roleDefinitions/00482a5a-887f-4fb3-b363-3b7fe8e74483'
-
 
 var functionAppSettings = [
   {
@@ -45,11 +48,26 @@ var functionAppSettings = [
     value: appInsights.properties.InstrumentationKey
   }
   {
-    name: 'PnPPowerShell_KeyVaultId'
+    name: '_PnPPowerShell_KeyVaultId'
     value: keyVault.id
   }
+  {
+    name: '_AZTenantDefaultDomain'
+    value: AZTenantDefaultDomain
+  }
+  {
+    name: '_SharePointDomain'
+    value: SharePointDomain
+  }
+  {
+    name: '_PnPClientID'
+    value: PnPClientID
+  }
+  {
+    name: '_PnPApplicationName'
+    value: PnPApplicationName
+  }
 ]
-
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
   name: StorageAccountName
