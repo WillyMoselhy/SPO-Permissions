@@ -53,7 +53,11 @@ Connect-PnPOnline -Url "https://$env:_SharePointDomain" -ClientId $env:_PnPClien
 Write-Host "Connected to PNP"
 
 Write-Host "Getting all site collections"
-$SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn ("SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1")
+$skippedTempaltes = @(
+    "SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1","OINTPUBLISHINGTOPIC#0", "TEAMCHANNEL#0", "TEAMCHANNEL#1"
+)
+
+$SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn $skippedTempaltes
 
 $null = New-Item -Path .\temp -ItemType Directory -Force
 $timeStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
