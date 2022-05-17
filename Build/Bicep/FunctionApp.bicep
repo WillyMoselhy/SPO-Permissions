@@ -76,6 +76,10 @@ var functionAppSettings = [
     name: '_CSVBlobContainerName'
     value: CSVBlobContainerName
   }
+  {
+    name: 'WEBSITE_LOAD_USER_PROFILE' // This is required in Premium Functions to handle the X509 Certificate properly and avoid file not found error
+    value: 1
+  }
 ]
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' = {

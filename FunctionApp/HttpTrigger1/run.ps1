@@ -58,7 +58,7 @@ $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn (
 $null = New-Item -Path .\temp -ItemType Directory -Force
 $timeStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $tempFolder = New-Item -Path ".\temp\$timeStamp" -ItemType Directory
-Write-Host "Found $($siteCollections.Count) sites"
+Write-Host "Found $($sitesCollections.Count) sites"
 
 #Loop through each site collection
 ForEach ($Site in $SitesCollections) {
@@ -72,7 +72,7 @@ ForEach ($Site in $SitesCollections) {
 
 
     #Call the Function for site collection
-    Start-SPOPermissionCollection -SiteURL $Site.URL -ReportFile $reportFile -Recursive -ScanItemLevel -GraphApiToken $mgToken -Verbose # -IncludeInheritedPermissions
+    Start-SPOPermissionCollection -SiteURL $Site.URL -ReportFile $reportFile -Recursive -ScanItemLevel -GraphApiToken $env:mgToken -Verbose # -IncludeInheritedPermissions
     Disconnect-PnPOnline -Connection $SiteConn
 
     $csv = Get-Content -Path $reportFile | Out-String -Width 9999
