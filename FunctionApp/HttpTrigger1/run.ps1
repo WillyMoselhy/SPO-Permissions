@@ -92,10 +92,10 @@ ForEach ($Site in $SitesCollections) {
         Authorization    = "Bearer $storageToken"
         'x-ms-version'   = '2021-04-10'
         'x-ms-date'      = '{0:R}' -f (Get-Date).ToUniversalTime()
-        'x-ms-blob-type' = 'BlockBlob '
+        'x-ms-blob-type' = 'BlockBlob'
     }
 
-    $url = "https://safuncspopermissions01.blob.core.windows.net/output/$filename" # TODO: Change this to an environment variable
+    $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/$filename" # TODO: Change this to an environment variable
 
     Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body #-ContentType "application/json"
 

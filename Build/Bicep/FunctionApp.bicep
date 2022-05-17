@@ -18,6 +18,7 @@ param AZTenantDefaultDomain string
 param SharePointDomain string
 param PnPClientID string
 param PnPApplicationName string
+param CSVBlobContainerName string = 'output'
 
 // Variables
 var keyVaultAdministratorRoleId = '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Authorization/roleDefinitions/00482a5a-887f-4fb3-b363-3b7fe8e74483'
@@ -67,9 +68,17 @@ var functionAppSettings = [
     name: '_PnPApplicationName'
     value: PnPApplicationName
   }
+  {
+    name: '_StorageAccountName'
+    value: StorageAccountName
+  }
+  {
+    name: '_CSVBlobContainerName'
+    value: CSVBlobContainerName
+  }
 ]
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' = {
   name: StorageAccountName
   location: Location
   kind: 'StorageV2'
@@ -80,6 +89,9 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
     supportsHttpsTrafficOnly: true
     minimumTlsVersion: 'TLS1_2'
   }
+}
+resource outputContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-09-01' = {
+  name: '${storageAccount.name}/default/${CSVBlobContainerName}'
 }
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
@@ -163,4 +175,5 @@ resource keyVaultAdminRoleAssignment 'Microsoft.Authorization/roleAssignments@20
 }
 
 output msiID string = functionApp.identity.principalId
-output keyvault string = keyVault.id
+output outputContainerId string = outputContainer.id
+output keyvaultId string = keyVault.id

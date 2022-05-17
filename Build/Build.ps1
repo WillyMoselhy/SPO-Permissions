@@ -36,8 +36,18 @@ $azAccount = Get-AzADUser -UserPrincipalName $azContext.Account
 #region: Setup PnP PowerShell
 Import-Module PnP.PowerShell
 
-$result = Register-PnPAzureADApp -ApplicationName $PnPApplicationName -Tenant $defaultDomain -Interactive
-$pnpClientID = $result.'AzureAppId/ClientId'
+$pnpSerivcePrinicapl = Get-AzADServicePrincipal -DisplayName $PnPApplicationName
+
+if ($null -eq $pnpSerivcePrinicapl) {
+    Write-Host "Registering PnP Application"
+    $pnpSerivcePrinicapl = Register-PnPAzureADApp -ApplicationName $PnPApplicationName -Tenant $defaultDomain -Interactive -ErrorAction Stop
+    $pnpClientID = $pnpSerivcePrinicapl.'AzureAppId/ClientId'
+}
+else {
+    Write-Host "PnP App is already registered: $PnPApplicationName"
+    $pnpClientID = $pnpSerivcePrinicapl.AppId
+}
+
 
 # Create Resource Group
 $resourceGroup = New-AzResourceGroup -Name $RGName -Location $Location -Force
@@ -64,18 +74,29 @@ $bicepDeployment = New-AzResourceGroupDeployment @deploymentParams
 # Get the function app MSI and publish Profile
 
 
-$msiIDs = $bicepDeployment.Outputs.msiID.Value
+$msiID = $bicepDeployment.Outputs.msiID.Value
 
 # Update permissions for MSI(s) to access key vault
-$msiIDs | ForEach-Object {
-    $appId = (Get-AzADServicePrincipal -ObjectId $_).AppId
-    if (-Not (Get-AzRoleAssignment -Scope $bicepDeployment.Outputs.keyvault.Value -RoleDefinitionName 'Key Vault Secrets User' -ObjectId $appId)) {
-        New-AzRoleAssignment -ApplicationId $appId -RoleDefinitionName 'Key Vault Secrets User' -Scope $bicepDeployment.Outputs.keyvault.Value
-    }
-    else {
-        "Permission is already applied"
-    }
+
+$appId = (Get-AzADServicePrincipal -ObjectId $msiID).AppId
+$keyVaultRoleName = 'Key Vault Secrets User' 
+if (-Not (Get-AzRoleAssignment -Scope $bicepDeployment.Outputs.keyvault.Value -RoleDefinitionName $keyVaultRoleName -ObjectId $msiID)) {
+    New-AzRoleAssignment -ApplicationId $appId -RoleDefinitionName $keyVaultRoleName -Scope $bicepDeployment.Outputs.keyvault.Value
 }
+else {
+    "Permission is already applied"
+}
+
+# Update permissions for the storage account output blob container
+$storageRoleName = "Storage Blob Data Contributor"
+if (-Not (Get-AzRoleAssignment -Scope $bicepDeployment.Outputs.outputContainerId.Value -RoleDefinitionName $storageRoleName -ObjectId $msiID)) {
+    Write-Host "Assigning role $storageRoleName to Function App MSI $msiID"
+    New-AzRoleAssignment -Scope $bicepDeployment.Outputs.outputContainerId.Value -RoleDefinitionName $storageRoleName -ApplicationId $appId 
+}
+else {
+    "Permission is already applied"
+}
+
 
 #endregion
 
