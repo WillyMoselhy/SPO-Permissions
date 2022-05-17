@@ -98,8 +98,8 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: '${FunctionAppName}-asp'
   location: Location
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
+    name: 'EP1'
+    //tier: 'Dynamic'
   }
 }
 

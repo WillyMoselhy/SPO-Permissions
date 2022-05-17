@@ -41,7 +41,7 @@ Write-Host "Got tenant information: $tenantId - $tenantFQDN"
 #$cert = Get-AzKeyVaultSecret -ResourceId $env:PnPPowerShell_KeyVaultId -Name PnPPowerShell -AsPlainText
 #Write-Host "Cert Obtained from keyvault"
 
-$certBase64 = Get-AzKeyVaultSecret -ResourceId $env:_PnPPowerShell_KeyVaultId -Name $env:_PnPApplicationName -AsPlainText
+$certBase64 = Get-AzKeyVaultSecret -ResourceId $env:_PnPPowerShell_KeyVaultId -Name $env:_PnPApplicationName -AsPlainText -ErrorAction Stop
 Write-Host "Got PnP Application certificate as Base64"
 
 #$MsalToken = Get-MsalToken -ClientId $ClientId  -ClientCertificate $certBase64 -TenantId $tenantId -ForceRefresh
@@ -58,7 +58,7 @@ $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn (
 $null = New-Item -Path .\temp -ItemType Directory -Force
 $timeStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $tempFolder = New-Item -Path ".\temp\$timeStamp" -ItemType Directory
-
+Write-Host "Found $($siteCollections.Count) sites"
 
 #Loop through each site collection
 ForEach ($Site in $SitesCollections) {

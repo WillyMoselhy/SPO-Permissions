@@ -27,7 +27,6 @@ else {
     throw "More than one root doamin found!"
 }
 $defaultDomain = $azTenant.DefaultDomain
-$onMicrosoftDomain = "$rootDomain.onmicrosoft.com"
 $sharePointDomain = "$rootDomain.sharepoint.com"
 
 # We will use this to assign keyvault permissions to the account running the deployment.
@@ -41,10 +40,12 @@ $pnpSerivcePrinicapl = Get-AzADServicePrincipal -DisplayName $PnPApplicationName
 if ($null -eq $pnpSerivcePrinicapl) {
     Write-Host "Registering PnP Application"
     $pnpSerivcePrinicapl = Register-PnPAzureADApp -ApplicationName $PnPApplicationName -Tenant $defaultDomain -Interactive -ErrorAction Stop
+    $certBase64 = $pnpSerivcePrinicapl.Base64Encoded
     $pnpClientID = $pnpSerivcePrinicapl.'AzureAppId/ClientId'
 }
 else {
     Write-Host "PnP App is already registered: $PnPApplicationName"
+    $certBase64 = [system.Convert]::ToBase64String(([System.IO.File]::ReadAllBytes('.\func-ecl-SPOPerm-01-PnPApp.pfx')))
     $pnpClientID = $pnpSerivcePrinicapl.AppId
 }
 
@@ -80,8 +81,8 @@ $msiID = $bicepDeployment.Outputs.msiID.Value
 
 $appId = (Get-AzADServicePrincipal -ObjectId $msiID).AppId
 $keyVaultRoleName = 'Key Vault Secrets User' 
-if (-Not (Get-AzRoleAssignment -Scope $bicepDeployment.Outputs.keyvault.Value -RoleDefinitionName $keyVaultRoleName -ObjectId $msiID)) {
-    New-AzRoleAssignment -ApplicationId $appId -RoleDefinitionName $keyVaultRoleName -Scope $bicepDeployment.Outputs.keyvault.Value
+if (-Not (Get-AzRoleAssignment -Scope $bicepDeployment.Outputs.keyvaultId.Value -RoleDefinitionName $keyVaultRoleName -ObjectId $msiID)) {
+    New-AzRoleAssignment -ApplicationId $appId -RoleDefinitionName $keyVaultRoleName -Scope $bicepDeployment.Outputs.keyvaultId.Value
 }
 else {
     "Permission is already applied"
@@ -112,7 +113,7 @@ Read-Host "Function App Publish Profile is in clipboard, please paste it as a ne
 
 #region: Import PnP Certificate to Keyvault
 
-Import-AzKeyVaultCertificate -VaultName $KeyVaultName -Name $PnPApplicationName -CertificateString $result.Base64Encoded
+Import-AzKeyVaultCertificate -VaultName $KeyVaultName -Name $PnPApplicationName -CertificateString $certbase64
 
 
 # TEST - DELETE LATER
