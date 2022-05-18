@@ -52,7 +52,7 @@ else {
 
 
 # Create Resource Group
-$resourceGroup = New-AzResourceGroup -Name $RGName -Location $Location -Force
+$null = New-AzResourceGroup -Name $RGName -Location $Location -Force 
 
 # Deploy function app resources
 $deploymentParams = @{
