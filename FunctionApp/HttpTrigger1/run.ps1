@@ -40,7 +40,7 @@ if (-not $targetURL) {
 }
 
 if ($targetURL) {
-    $SitesCollections = $targetURL
+    $SitesCollections = [PSCustomObject]@{URL = $targetURL}
     Write-Host "Will scan only against: $targetURL"
 }
 else {
