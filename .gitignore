@@ -6,6 +6,9 @@ appsettings.json
 local.settings.json
 *.cer
 *.pfx
+
+*.pbix
+
 # Azurite artifacts
 __blobstorage__
 __queuestorage__
@@ -13,3 +16,4 @@ __azurite_db*__.json
 
 # Temp Folder
 temp
+

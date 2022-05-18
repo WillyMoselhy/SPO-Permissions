@@ -35,18 +35,19 @@ $azAccount = Get-AzADUser -UserPrincipalName $azContext.Account
 #region: Setup PnP PowerShell
 Import-Module PnP.PowerShell
 
-$pnpSerivcePrinicapl = Get-AzADServicePrincipal -DisplayName $PnPApplicationName
+$pnpSerivcePrincipal = Get-AzADServicePrincipal -DisplayName $PnPApplicationName
 
-if ($null -eq $pnpSerivcePrinicapl) {
+if ($null -eq $pnpSerivcePrincipal) {
     Write-Host "Registering PnP Application"
-    $pnpSerivcePrinicapl = Register-PnPAzureADApp -ApplicationName $PnPApplicationName -Tenant $defaultDomain -Interactive -ErrorAction Stop
-    $certBase64 = $pnpSerivcePrinicapl.Base64Encoded
-    $pnpClientID = $pnpSerivcePrinicapl.'AzureAppId/ClientId'
+    $pnpSerivcePrincipal = Register-PnPAzureADApp -ApplicationName $PnPApplicationName -Tenant $defaultDomain -Interactive -ErrorAction Stop
+    $certBase64 = $pnpSerivcePrincipal.Base64Encoded
+    $pnpClientID = $pnpSerivcePrincipal.'AzureAppId/ClientId'
 }
 else {
     Write-Host "PnP App is already registered: $PnPApplicationName"
     $certBase64 = [system.Convert]::ToBase64String(([System.IO.File]::ReadAllBytes('.\func-ecl-SPOPerm-01-PnPApp.pfx')))
-    $pnpClientID = $pnpSerivcePrinicapl.AppId
+    $pnpClientID = $pnpSerivcePrincipal.AppId
+    # TODO: Check the certificates and make sure this part works properly    
 }
 
 
@@ -114,47 +115,6 @@ Read-Host "Function App Publish Profile is in clipboard, please paste it as a ne
 #region: Import PnP Certificate to Keyvault
 
 Import-AzKeyVaultCertificate -VaultName $KeyVaultName -Name $PnPApplicationName -CertificateString $certbase64
-
-
-# TEST - DELETE LATER
-Connect-PnPOnline -Interactive -Url https://M365x21720695.sharepoint.com
-Get-PnPTenant
-
-
-$LOCAL_TenantId = "ed559cd0-4ff1-413f-9d46-9dc213a5158f"
-$LOCAL_ClientId = "2e1fee6b-7fe5-48ac-b51a-da35e149f1c5"
-$LOCAL_ClientSecret = "6Es8Q~Q66_0aeT_ka6ps~pBBkDtaOuq38jjBbafO"
-
-Connect-PnPOnline -Url "https://$($LoginInfo.TenantName).Sharepoint.com" -ClientId $LoginInfo.AppID -Tenant "$($LoginInfo.TenantName).OnMicrosoft.com" -CertificatePath $LoginInfo.CertificatePath -ErrorAction Stop
-Connect-PnPOnline -Url 'https://M365x21720695.sharepoint.com' -Tenant 'M365x21720695.onmicrosoft.com' -ClientId "2e1fee6b-7fe5-48ac-b51a-da35e149f1c5" -CertificatePath 'C:\GitDevOps\SPO-Permissions\FunctionApp\Cert\PnP Rocks2.pfx'
-Connect-PnPOnline -Url 'https://M365x21720695.sharepoint.com' -Tenant 'M365x21720695.onmicrosoft.com' -ClientId "2e1fee6b-7fe5-48ac-b51a-da35e149f1c5" -CertificatePath 'C:\GitDevOps\SPO-Permissions\FunctionApp\Cert\PnP Rocks2.pfx'
-
-
-
-Connect-PnPOnline -Url 'https://M365x21720695.sharepoint.com' -Tenant 'M365x21720695.onmicrosoft.com' -ClientId "8df3c7d6-2adf-4e42-a549-2f8f665c80e5" -CertificateBase64Encoded $certBase64
-Get-PnPTenant
-
-$Body = @{
-    'tenant'        = $LOCAL_TenantId
-    'client_id'     = $LOCAL_ClientId
-    'scope'         = 'https://m365x21720695.sharepoint.com/.default'
-    'client_secret' = $LOCAL_ClientSecret
-    'grant_type'    = 'client_credentials'
-}
-
-# Assemble a hashtable for splatting parameters, for readability
-# The tenant id is used in the uri of the request as well as the body
-$Params = @{
-
-    'Uri'         = "https://login.microsoftonline.com/$LOCAL_TenantId/oauth2/v2.0/token"
-    'Method'      = 'Post'
-    'Body'        = $Body
-    'ContentType' = 'application/x-www-form-urlencoded'
-}
-
-$mgToken = (Invoke-RestMethod @Params).access_token
-Disconnect-PnPOnline
-Connect-PnPOnline -Url 'https://M365x21720695.sharepoint.com' -AccessToken $mgToken
 
 #region: Assign Graph API permission to use PnP PowerShell with MSI
 # Reference: https://pnp.github.io/powershell/articles/azurefunctions.html#assigning-microsoft-graph-permissions-to-the-managed-identity

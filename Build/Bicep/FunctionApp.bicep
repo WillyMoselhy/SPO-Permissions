@@ -5,7 +5,7 @@ The function app is made up of:
 3- Log Analytics Workspace
 4- Application Insights (which requires a log analytics workspace)
 5- Function App
-7 - Keyvault to store PnP App certificate
+7- Keyvault to store PnP App certificate
 */
 
 // Parameters
@@ -18,7 +18,7 @@ param AZTenantDefaultDomain string
 param SharePointDomain string
 param PnPClientID string
 param PnPApplicationName string
-param CSVBlobContainerName string = 'output'
+param CSVBlobContainerName string = 'output' // Please do not change this
 
 // Variables
 var keyVaultAdministratorRoleId = '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Authorization/roleDefinitions/00482a5a-887f-4fb3-b363-3b7fe8e74483'

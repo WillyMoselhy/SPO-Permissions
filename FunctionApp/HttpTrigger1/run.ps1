@@ -23,30 +23,14 @@ $body += (Get-Module -ListAvailable | Out-String -Width 999)
 $body += $env:PSModulePath
 $body += "r`n" + (Get-Location)
 
-
-
-#$LoginInfo = [PSCustomObject]@{
-    #TenantID        = $env:_TenantID
-    #TenantName      = $env:_TenantName
-    #AppID           = '2e1fee6b-7fe5-48ac-b51a-da35e149f1c5'# $env:_AppID
-    #CertificatePath = 'C:\home\site\wwwroot\Cert\PnP Rocks2.pfx' #This can be EncodedBase64
-    #BlobFunctionKey = $env:_SaveBlobFunction
-#}
-
 $azTenant = Get-AzTenant
 $tenantId = $azTenant.TenantId
 $tenantFQDN = $env:_AZTenantDefaultDomain  
 Write-Host "Got tenant information: $tenantId - $tenantFQDN"
 
-#$cert = Get-AzKeyVaultSecret -ResourceId $env:PnPPowerShell_KeyVaultId -Name PnPPowerShell -AsPlainText
-#Write-Host "Cert Obtained from keyvault"
 
 $certBase64 = Get-AzKeyVaultSecret -ResourceId $env:_PnPPowerShell_KeyVaultId -Name $env:_PnPApplicationName -AsPlainText -ErrorAction Stop
 Write-Host "Got PnP Application certificate as Base64"
-
-#$MsalToken = Get-MsalToken -ClientId $ClientId  -ClientCertificate $certBase64 -TenantId $tenantId -ForceRefresh
-#Write-Host "Graph API token valid to: $($MSALToken.ExpiresOn)"
-
 
 Connect-PnPOnline -Url "https://$env:_SharePointDomain" -ClientId $env:_PnPClientId -Tenant $tenantFQDN -CertificateBase64Encoded $certBase64 -ErrorAction Stop
 
@@ -65,9 +49,11 @@ $tempFolder = New-Item -Path ".\temp\$timeStamp" -ItemType Directory
 Write-Host "Found $($sitesCollections.Count) sites"
 
 #Loop through each site collection
+$i=0
 ForEach ($Site in $SitesCollections) {
+    $i++  # Counter for logs
     #Connect to site collection
-    Write-Host "Generating Report for Site:$($Site.Url)"
+    Write-Host "Generating Report for Site ($i):$($Site.Url)"
     $filename = "$($Site.URL.Replace('https://','').Replace('/','_')).CSV"
     $reportFile = Join-Path -Path $tempFolder.FullName -ChildPath $filename
     Write-Host "Report will be stored temporarily as: $reportFile"
@@ -81,9 +67,6 @@ ForEach ($Site in $SitesCollections) {
 
     $csv = Get-Content -Path $reportFile | Out-String -Width 9999
     $body = $csv
-    #$body = ConvertTo-Json -InputObject @{
-    #    csv = $csv
-    #}
 
     # Storage Token
     Write-Host "Getting Storage Token"
@@ -101,9 +84,8 @@ ForEach ($Site in $SitesCollections) {
 
     $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/$filename" # TODO: Change this to an environment variable
 
-    Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body #-ContentType "application/json"
+    Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body 
 
-    #$null = Invoke-RestMethod -Uri $LoginInfo.BlobFunctionKey -Headers @{filename = $filename } -Body $body -ContentType "application/json" -Method POST
 
     Write-Host "Uploaded file to Blob storage: $reportFile"
 
