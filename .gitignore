@@ -4,6 +4,10 @@ bin
 obj
 appsettings.json
 local.settings.json
+*.cer
+*.pfx
+
+*.pbix
 
 # Azurite artifacts
 __blobstorage__
@@ -12,3 +16,4 @@ __azurite_db*__.json
 
 # Temp Folder
 temp
+

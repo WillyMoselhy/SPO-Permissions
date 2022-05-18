@@ -20,7 +20,7 @@ if ($env:MSI_SECRET) {
     $resourceURI = "https://graph.microsoft.com"
     $tokenAuthURI = $env:IDENTITY_ENDPOINT + "?resource=$resourceURI&api-version=2019-08-01"
     $tokenResponse = Invoke-RestMethod -Method Get -Headers @{"X-IDENTITY-HEADER" = "$env:IDENTITY_HEADER" } -Uri $tokenAuthURI
-    $mgToken = $tokenResponse.access_token
+    $env:mgToken = $tokenResponse.access_token
 }
 else{
     # THIS is for offline testing - using a Test SP

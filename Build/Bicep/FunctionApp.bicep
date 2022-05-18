@@ -5,19 +5,23 @@ The function app is made up of:
 3- Log Analytics Workspace
 4- Application Insights (which requires a log analytics workspace)
 5- Function App
-6- Function App Dev slot
-7 - Keyvault to store PnP App certificate
+7- Keyvault to store PnP App certificate
 */
 
 // Parameters
 param StorageAccountName string
 param FunctionAppName string
+param KeyVaultName string
 param Location string = resourceGroup().location
 param AccountId string
+param AZTenantDefaultDomain string
+param SharePointDomain string
+param PnPClientID string
+param PnPApplicationName string
+param CSVBlobContainerName string = 'output' // Please do not change this
 
 // Variables
 var keyVaultAdministratorRoleId = '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Authorization/roleDefinitions/00482a5a-887f-4fb3-b363-3b7fe8e74483'
-
 
 var functionAppSettings = [
   {
@@ -45,13 +49,40 @@ var functionAppSettings = [
     value: appInsights.properties.InstrumentationKey
   }
   {
-    name: 'PnPPowerShell_KeyVaultId'
+    name: '_PnPPowerShell_KeyVaultId'
     value: keyVault.id
+  }
+  {
+    name: '_AZTenantDefaultDomain'
+    value: AZTenantDefaultDomain
+  }
+  {
+    name: '_SharePointDomain'
+    value: SharePointDomain
+  }
+  {
+    name: '_PnPClientID'
+    value: PnPClientID
+  }
+  {
+    name: '_PnPApplicationName'
+    value: PnPApplicationName
+  }
+  {
+    name: '_StorageAccountName'
+    value: StorageAccountName
+  }
+  {
+    name: '_CSVBlobContainerName'
+    value: CSVBlobContainerName
+  }
+  {
+    name: 'WEBSITE_LOAD_USER_PROFILE' // This is required in Premium Functions to handle the X509 Certificate properly and avoid file not found error
+    value: 1
   }
 ]
 
-
-resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' = {
   name: StorageAccountName
   location: Location
   kind: 'StorageV2'
@@ -63,13 +94,16 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
     minimumTlsVersion: 'TLS1_2'
   }
 }
+resource outputContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-09-01' = {
+  name: '${storageAccount.name}/default/${CSVBlobContainerName}'
+}
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: '${FunctionAppName}-asp'
   location: Location
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
+    name: 'EP1'
+    //tier: 'Dynamic'
   }
 }
 
@@ -121,24 +155,8 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
   }
 }
 
-resource devSlot 'Microsoft.Web/sites/slots@2021-03-01' = {
-  name: '${functionApp.name}/dev'
-  location: Location
-  kind: 'functionApp'
-  properties: {
-    enabled: true
-    siteConfig: {
-      appSettings: functionAppSettings
-
-    }
-  }
-  identity: {
-    type: 'SystemAssigned'
-  }
-}
-
 resource keyVault 'Microsoft.KeyVault/vaults@2021-10-01' = {
-  name: '${FunctionAppName}-kv'
+  name: KeyVaultName
   location: Location
   properties: {
     tenantId: subscription().tenantId
@@ -149,6 +167,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-10-01' = {
     }
   }
 }
+
 resource keyVaultAdminRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
   scope: keyVault
   name: guid(keyVault.id, AccountId, keyVaultAdministratorRoleId)
@@ -159,6 +178,6 @@ resource keyVaultAdminRoleAssignment 'Microsoft.Authorization/roleAssignments@20
   }
 }
 
-output msiIDprod string = functionApp.identity.principalId
-output msiIDdev string = devSlot.identity.principalId
-output keyvault string = keyVault.id
+output msiID string = functionApp.identity.principalId
+output outputContainerId string = outputContainer.id
+output keyvaultId string = keyVault.id
