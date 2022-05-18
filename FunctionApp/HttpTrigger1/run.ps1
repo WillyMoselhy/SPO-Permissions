@@ -11,17 +11,6 @@ Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
         Body       = 'Function Started successfully. Collection will now begin.'
     })
 
-# Interact with query parameters or the body of the request.
-$name = $Request.Query.Name
-if (-not $name) {
-    $name = $Request.Body.Name
-
-}
-
-$body = "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-$body += (Get-Module -ListAvailable | Out-String -Width 999)
-$body += $env:PSModulePath
-$body += "r`n" + (Get-Location)
 
 $azTenant = Get-AzTenant
 $tenantId = $azTenant.TenantId
@@ -36,20 +25,36 @@ Connect-PnPOnline -Url "https://$env:_SharePointDomain" -ClientId $env:_PnPClien
 
 Write-Host "Connected to PNP"
 
-Write-Host "Getting all site collections"
-$skippedTempaltes = @(
-    "SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1","OINTPUBLISHINGTOPIC#0", "TEAMCHANNEL#0", "TEAMCHANNEL#1"
-)
 
-$SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn $skippedTempaltes
+
+
 
 $null = New-Item -Path .\temp -ItemType Directory -Force
 $timeStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $tempFolder = New-Item -Path ".\temp\$timeStamp" -ItemType Directory
-Write-Host "Found $($sitesCollections.Count) sites"
+
+#region: Decide to scan all sites or just a provided URL
+$targetURL = $Request.Query.URL
+if (-not $targetURL) {
+    $targetURL = $Request.Body.URL
+}
+
+if ($targetURL) {
+    $SitesCollections = $targetURL
+    Write-Host "Will scan only against: $targetURL"
+}
+else {
+    Write-Host "URL not provided, scanning all SharePoint sites."
+    $skippedTempaltes = @(
+        "SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1", "OINTPUBLISHINGTOPIC#0", "TEAMCHANNEL#0", "TEAMCHANNEL#1"
+    )
+    $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn $skippedTempaltes
+    Write-Host "Found $($sitesCollections.Count) sites"
+}
+#endregion
 
 #Loop through each site collection
-$i=0
+$i = 0
 ForEach ($Site in $SitesCollections) {
     $i++  # Counter for logs
     #Connect to site collection

@@ -11,9 +11,7 @@ function Start-SPOPermissionCollection {
     )
     $script:GraphApiToken = $GraphApiToken
 
-    Write-Host "Getting all site collections"
-    $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn ("SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1")
-
+    
     try {
         #Get the Web
         $web = Get-PnPWeb
