@@ -27,5 +27,5 @@ else{
         Body       = $body
     })    
     
-    Stop-PSFFunction -Message $body -EnableException
+    Stop-PSFFunction -Message $body -EnableException $true
 }
