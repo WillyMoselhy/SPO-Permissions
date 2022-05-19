@@ -50,6 +50,13 @@ else {
     )
     $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn $skippedTempaltes
     Write-Host "Found $($sitesCollections.Count) sites"
+    # upload list of site collections found to blob storage - used by Power BI to ensure we scanned all sites
+    $headers = Get-SPOPermissionStorageAccessHeaders
+    $body = $sitesCollections | Select-Object -Property Url,Template,LocaleID | ConvertTo-Csv
+    $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/SiteCollections.csv" 
+    Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body 
+
+    Write-Host "Found $($sitesCollections.Count) sites"
 }
 #endregion
 
@@ -73,22 +80,10 @@ ForEach ($Site in $SitesCollections) {
     $csv = Get-Content -Path $reportFile | Out-String -Width 9999
     $body = $csv
 
-    # Storage Token
-    Write-Host "Getting Storage Token"
-    $resourceURI = "https://storage.azure.com"
-    $tokenAuthURI = $env:IDENTITY_ENDPOINT + "?resource=$resourceURI&api-version=2019-08-01"
-    $tokenResponse = Invoke-RestMethod -Method Get -Headers @{"X-IDENTITY-HEADER" = "$env:IDENTITY_HEADER" } -Uri $tokenAuthURI
-    $storageToken = $tokenResponse.access_token
 
-    $headers = @{
-        Authorization    = "Bearer $storageToken"
-        'x-ms-version'   = '2021-04-10'
-        'x-ms-date'      = '{0:R}' -f (Get-Date).ToUniversalTime()
-        'x-ms-blob-type' = 'BlockBlob'
-    }
-
-    $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/$filename" # TODO: Change this to an environment variable
-
+    # Get storage access token and headers then upload file
+    $headers = Get-SPOPermissionStorageAccessHeaders
+    $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/$filename" 
     Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body 
 
 

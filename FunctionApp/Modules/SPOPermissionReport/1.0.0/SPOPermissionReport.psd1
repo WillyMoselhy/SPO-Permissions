@@ -41,6 +41,7 @@
 	# Functions to export from this module
 	FunctionsToExport = @(
 		'Start-SPOPermissionCollection'
+		'Get-SPOPermissionStorageAccessHeaders'
 	)
 
 	# Cmdlets to export from this module
