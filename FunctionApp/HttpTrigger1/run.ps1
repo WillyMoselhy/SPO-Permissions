@@ -49,10 +49,14 @@ else {
         "SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1", "OINTPUBLISHINGTOPIC#0", "TEAMCHANNEL#0", "TEAMCHANNEL#1"
     )
     $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn $skippedTempaltes
+    # Calculate file name for each site
+    $SitesCollections | ForEach-Object {
+        $_ | Add-Member -MemberType NoteProperty -Name FileName -Value "$($_.URL.Replace('https://','').Replace('/','_')).CSV" 
+    }
     Write-Host "Found $($sitesCollections.Count) sites"
     # upload list of site collections found to blob storage - used by Power BI to ensure we scanned all sites
     $headers = Get-SPOPermissionStorageAccessHeaders
-    $body = $sitesCollections | Select-Object -Property Url,Template,LocaleID | ConvertTo-Csv | Out-String -Width 9999
+    $body = $sitesCollections | Select-Object -Property Url,Template,FileName | ConvertTo-Csv | Out-String -Width 9999
     $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/SiteCollections.csv" 
     Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body 
 
@@ -62,11 +66,11 @@ else {
 
 #Loop through each site collection
 $i = 0
-ForEach ($Site in $SitesCollections) {
+ForEach ($site in $SitesCollections) {
     $i++  # Counter for logs
     #Connect to site collection
     Write-Host "Generating Report for Site ($i):$($Site.Url)"
-    $filename = "$($Site.URL.Replace('https://','').Replace('/','_')).CSV"
+    $filename = $site.FileName
     $reportFile = Join-Path -Path $tempFolder.FullName -ChildPath $filename
     Write-Host "Report will be stored temporarily as: $reportFile"
 
