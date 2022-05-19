@@ -110,6 +110,9 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' = {
 resource outputContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-09-01' = {
   name: '${storageAccount.name}/default/${CSVBlobContainerName}'
 }
+resource sitecollectionsqueue 'Microsoft.Storage/storageAccounts/queueServices/queues@2021-09-01' = {
+  name: '${storageAccount.name}/default/sitecollectionstoscan'
+}
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: '${FunctionAppName}-asp'

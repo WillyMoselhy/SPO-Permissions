@@ -95,7 +95,6 @@ ForEach ($site in $SitesCollections) {
 
 
     Write-PSFMessage -Level Host  "Uploaded file to Blob storage: $reportFile"
-
+    Remove-Item -Path $reportFile -Force -Confirm:$false 
 
 }
-Remove-Item -Path $tempFolder -Force -Confirm:$false
