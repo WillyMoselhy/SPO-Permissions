@@ -69,10 +69,10 @@ $i = 0
 ForEach ($site in $SitesCollections) {
     $i++  # Counter for logs
     #Connect to site collection
-    Write-PSFMessage -Message  "Generating Report for Site ($i):$($Site.Url)"
+    Write-PSFMessage -Level Host -Message  "Generating Report for Site ($i):$($Site.Url)"
     $filename = $site.FileName
     $reportFile = Join-Path -Path $tempFolder.FullName -ChildPath $filename
-    Write-PSFMessage -Message  "Report will be stored temporarily as: $reportFile"
+    Write-PSFMessage -Level Host -Message  "Report will be stored temporarily as: $reportFile"
 
     $SiteConn = Connect-PnPOnline -Url $Site.Url -ClientId $env:_PnPClientId -Tenant $tenantFQDN -CertificateBase64Encoded $certBase64
 
@@ -91,7 +91,7 @@ ForEach ($site in $SitesCollections) {
     Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body 
 
 
-    Write-PSFMessage -Message  "Uploaded file to Blob storage: $reportFile"
+    Write-PSFMessage -Level Host  "Uploaded file to Blob storage: $reportFile"
 
 
 }
