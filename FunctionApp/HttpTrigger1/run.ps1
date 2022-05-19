@@ -52,7 +52,7 @@ else {
     Write-Host "Found $($sitesCollections.Count) sites"
     # upload list of site collections found to blob storage - used by Power BI to ensure we scanned all sites
     $headers = Get-SPOPermissionStorageAccessHeaders
-    $body = $sitesCollections | Select-Object -Property Url,Template,LocaleID | ConvertTo-Csv
+    $body = $sitesCollections | Select-Object -Property Url,Template,LocaleID | ConvertTo-Csv | Out-String -Width 9999
     $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/SiteCollections.csv" 
     Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body 
 
