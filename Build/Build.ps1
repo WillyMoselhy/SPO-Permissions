@@ -6,7 +6,7 @@ $FunctionAppName = 'func-ecl-SPOPerm-01'
 $StorageAccountName = 'saeclfuncspoperm0122'
 $KeyVaultName = 'funcecpSPOPerm01kv22516'
 $PnPApplicationName = "func-ecl-SPOPerm-01-PnPApp"
-
+$LogAnalyticsMaxLevel = 5
 # Validate inputs
 if ($KeyVaultName.Length -gt 24) { Throw "Keyvault name too long" }
 if ($StorageAccountName.Length -gt 24) { Throw "Keyvault name too long" }
@@ -64,6 +64,7 @@ $deploymentParams = @{
     KeyVaultName          = $KeyVaultName
     AZTenantDefaultDomain = $defaultDomain
     SharePointDomain      = $sharePointDomain
+    LogAnalyticsMaxLevel  = $LogAnalyticsMaxLevel
     
     # For SharePoint PnP Module
     PnPApplicationName    = $PnPApplicationName
