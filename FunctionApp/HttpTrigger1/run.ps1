@@ -4,7 +4,7 @@ using namespace System.Net
 param($Request, $TriggerMetadata)
 
 # Write to the Azure Functions log stream.
-Write-Host "PowerShell HTTP trigger function processed a request."
+Write-PSFMessage -Message  "PowerShell HTTP trigger function processed a request."
 # Associate values to output bindings by calling 'Push-OutputBinding'.
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
         StatusCode = [HttpStatusCode]::OK
@@ -15,15 +15,15 @@ Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
 $azTenant = Get-AzTenant
 $tenantId = $azTenant.TenantId
 $tenantFQDN = $env:_AZTenantDefaultDomain  
-Write-Host "Got tenant information: $tenantId - $tenantFQDN"
+Write-PSFMessage -Message  "Got tenant information: $tenantId - $tenantFQDN"
 
 
 $certBase64 = Get-AzKeyVaultSecret -ResourceId $env:_PnPPowerShell_KeyVaultId -Name $env:_PnPApplicationName -AsPlainText -ErrorAction Stop
-Write-Host "Got PnP Application certificate as Base64"
+Write-PSFMessage -Message  "Got PnP Application certificate as Base64"
 
 Connect-PnPOnline -Url "https://$env:_SharePointDomain" -ClientId $env:_PnPClientId -Tenant $tenantFQDN -CertificateBase64Encoded $certBase64 -ErrorAction Stop
 
-Write-Host "Connected to PNP"
+Write-PSFMessage -Message  "Connected to PNP"
 
 
 
@@ -41,10 +41,10 @@ if (-not $targetURL) {
 
 if ($targetURL) {
     $SitesCollections = [PSCustomObject]@{URL = $targetURL}
-    Write-Host "Will scan only against: $targetURL"
+    Write-PSFMessage -Message  "Will scan only against: $targetURL"
 }
 else {
-    Write-Host "URL not provided, scanning all SharePoint sites."
+    Write-PSFMessage -Message  "URL not provided, scanning all SharePoint sites."
     $skippedTempaltes = @(
         "SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1", "OINTPUBLISHINGTOPIC#0", "TEAMCHANNEL#0", "TEAMCHANNEL#1"
     )
@@ -53,14 +53,14 @@ else {
     $SitesCollections | ForEach-Object {
         $_ | Add-Member -MemberType NoteProperty -Name FileName -Value "$($_.URL.Replace('https://','').Replace('/','_')).CSV" 
     }
-    Write-Host "Found $($sitesCollections.Count) sites"
+    Write-PSFMessage -Message  "Found $($sitesCollections.Count) sites"
     # upload list of site collections found to blob storage - used by Power BI to ensure we scanned all sites
     $headers = Get-SPOPermissionStorageAccessHeaders
     $body = $sitesCollections | Select-Object -Property Url,Template,FileName | ConvertTo-Csv | Out-String -Width 9999
     $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/SiteCollections.csv" 
     Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body 
 
-    Write-Host "Found $($sitesCollections.Count) sites"
+    Write-PSFMessage -Message  "Uploaded list of Site Collections"
 }
 #endregion
 
@@ -69,10 +69,10 @@ $i = 0
 ForEach ($site in $SitesCollections) {
     $i++  # Counter for logs
     #Connect to site collection
-    Write-Host "Generating Report for Site ($i):$($Site.Url)"
+    Write-PSFMessage -Message  "Generating Report for Site ($i):$($Site.Url)"
     $filename = $site.FileName
     $reportFile = Join-Path -Path $tempFolder.FullName -ChildPath $filename
-    Write-Host "Report will be stored temporarily as: $reportFile"
+    Write-PSFMessage -Message  "Report will be stored temporarily as: $reportFile"
 
     $SiteConn = Connect-PnPOnline -Url $Site.Url -ClientId $env:_PnPClientId -Tenant $tenantFQDN -CertificateBase64Encoded $certBase64
 
@@ -91,7 +91,7 @@ ForEach ($site in $SitesCollections) {
     Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body 
 
 
-    Write-Host "Uploaded file to Blob storage: $reportFile"
+    Write-PSFMessage -Message  "Uploaded file to Blob storage: $reportFile"
 
 
 }
