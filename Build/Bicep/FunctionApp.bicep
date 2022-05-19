@@ -18,6 +18,7 @@ param AZTenantDefaultDomain string
 param SharePointDomain string
 param PnPClientID string
 param PnPApplicationName string
+param LogAnalyticsMaxLevel int
 param CSVBlobContainerName string = 'output' // Please do not change this
 
 // Variables
@@ -87,6 +88,10 @@ var functionAppSettings = [
   {
     name:'_WorkspaceKey'
     value: logAnalytics.listkeys().primarySharedKey
+  }
+  {
+    name: '_LogAnalyticsMaxLevel'
+    value: LogAnalyticsMaxLevel
   }
 ]
 
