@@ -67,8 +67,7 @@ if ($targetURLs) {
         }) 
     if ($badURLFound) { Stop-PSFFunction -Message 'Bad URLs supplied' -EnableException $true }
     
-    $scanList = $SitesCollections | Where-Object { $_ -in $targetURLs }
-    $scanList #TODO Remove this line    
+    $scanList = $SitesCollections | Where-Object { $_.Url -in $targetURLs }
 }
 else {
     $body = "No URL defind in query or body. Will scan all sites."
@@ -89,9 +88,10 @@ else {
 #endregion
 
 #Loop through each site collection to scan
-
+Write-PSFMessage "Pushing queue message to scan site collections(s)"
 ForEach ($site in $scanList) {
     Push-OutputBinding -Name SiteCollectionURL -Value $site.Url
+    Write-PSFMessage ("Pushed messafge for: {0}" -f $site.Url)
 }
 
 Write-PSFMessage -Level Host -Message "Function executed without errors"
