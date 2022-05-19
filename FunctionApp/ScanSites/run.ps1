@@ -59,13 +59,16 @@ if ($targetURLs) {
 
         }
     }
-    $scanList = $SitesCollections | Where-Object { $_ -in $targetURLs }
+
     
     Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
             Body       = $body
         }) 
     if ($badURLFound) { Stop-PSFFunction -Message 'Bad URLs supplied' -EnableException $true }
+    
+    $scanList = $SitesCollections | Where-Object { $_ -in $targetURLs }
+    $scanList #TODO Remove this line    
 }
 else {
     $body = "No URL defind in query or body. Will scan all sites."
@@ -79,7 +82,9 @@ else {
     $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/SiteCollections.csv" 
     Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body 
 
-    Write-PSFMessage -Message  "Uploaded list of Site Collections"    
+    Write-PSFMessage -Message  "Uploaded list of Site Collections"
+
+    $scanList = $SitesCollections
 }
 #endregion
 
