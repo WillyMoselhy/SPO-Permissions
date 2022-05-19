@@ -36,7 +36,7 @@ $paramSetPSFLoggingProvider = @{
     InstanceName = 'SPOPermissions'
     WorkspaceId  = $env:_WorkspaceId
     SharedKey    = $env:_WorkspaceKey
-    MaxLevel     = $enc:_LogAnalyticsMaxLevel
+    MaxLevel     = $env:_LogAnalyticsMaxLevel
     Enabled      = $true
 }
 Set-PSFLoggingProvider @paramSetPSFLoggingProvider
