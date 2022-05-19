@@ -80,6 +80,14 @@ var functionAppSettings = [
     name: 'WEBSITE_LOAD_USER_PROFILE' // This is required in Premium Functions to handle the X509 Certificate properly and avoid file not found error
     value: 1
   }
+  {
+    name:'_WorkspaceId'
+    value: logAnalytics.properties.customerId
+  }
+  {
+    name:'_WorkspaceKey'
+    value: logAnalytics.listkeys().primarySharedKey
+  }
 ]
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' = {
