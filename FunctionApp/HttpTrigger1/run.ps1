@@ -40,7 +40,10 @@ if (-not $targetURL) {
 }
 
 if ($targetURL) {
-    $SitesCollections = [PSCustomObject]@{URL = $targetURL}
+    $SitesCollections = [PSCustomObject]@{
+        URL = $targetURL
+        FileName = "$($targetURL.Replace('https://','').Replace('/','_')).CSV" 
+    }
     Write-PSFMessage -Message  "Will scan only against: $targetURL"
 }
 else {
