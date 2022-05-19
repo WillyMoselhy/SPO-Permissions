@@ -39,12 +39,12 @@ $paramSetPSFLoggingProvider = @{
     MaxLevel     = $enc:_LogAnalyticsMaxLevel
     Enabled      = $true
 }
-Set-PSFLoggingProvider @$paramSetPSFLoggingProvider
+Set-PSFLoggingProvider @paramSetPSFLoggingProvider
 $paramSetPSFLoggingProvider = @{
     Name    = 'Console'
     Enabled = $true
 }
-Set-PSFLoggingProvider @$paramSetPSFLoggingProvider
+Set-PSFLoggingProvider @paramSetPSFLoggingProvider
 Start-Sleep -Seconds 1
 #endregion
 
