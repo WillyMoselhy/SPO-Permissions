@@ -8,4 +8,4 @@ Write-PSFMessage "Queue item insertion time: $($TriggerMetadata.InsertionTime)"
 $permissionsScanMeasure = Measure-Command -Expression {
     .\ScanSiteCollection.ps1 -SiteCollectionURL $QueueItem
 }
-Write-PSFMessage "Finished permissions scanning for URL: $QueueItem - Time (seconds): $($permissionsScanMeasure.TotalSeconds)"
+Write-PSFMessage -Level Host -Message "Finished permissions scanning for URL: $QueueItem - Time (seconds): $($permissionsScanMeasure.TotalSeconds)"
