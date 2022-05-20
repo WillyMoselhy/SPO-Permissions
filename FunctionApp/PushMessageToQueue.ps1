@@ -1,10 +1,10 @@
-using namespace System.Net
+[CmdletBinding()]
+param (
+    [Parameter(Mandatory = $false)]
+    [string]
+    $URL
+)
 
-# Input bindings are passed in via param block.
-param($Request, $TriggerMetadata)
-
-# Write to the Azure Functions log stream.
-Write-PSFMessage -Message  "PowerShell HTTP trigger function processed a request."
 
 #region: get list of all site collections
 $azTenant = Get-AzTenant
@@ -34,14 +34,8 @@ Write-PSFMessage -Message  "Found $($sitesCollections.Count) sites"
 
 #endregion
 
-#region: Check if we are targeting specific URL(s) from query or body
-$targetURLs = $Request.Query.URL
-if (-not $targetURLs) {
-    $targetURLs = $Request.Body.URL
-}
-
-if ($targetURLs) {
-    $targetURLs = $targetURLs -split ','
+if ($URL) {
+    $targetURLs = $URL -split ','
     Write-PSFMessage -Message "Got request to scan specific URL(s):"
     $body = 'Scanning URL(s):'
     $targetURLs | ForEach-Object {
@@ -58,21 +52,19 @@ if ($targetURLs) {
         }
     }
 
-    
-    Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
-            StatusCode = [HttpStatusCode]::OK
-            Body       = $body
-        }) 
-    if ($badURLFound) { Stop-PSFFunction -Message 'Bad URLs supplied' -EnableException $true }
-    
-    $scanList = $SitesCollections | Where-Object { $_.Url -in $targetURLs }
+    if ($badURLFound) { 
+        $statusCode = [HttpStatusCode]::BadRequest
+        #Stop-PSFFunction -Message 'Bad URLs supplied' -EnableException $true 
+    }
+    else {
+        $statusCode = [HttpStatusCode]::OK
+        $scanList = $SitesCollections | Where-Object { $_.Url -in $targetURLs }
+    }
 }
 else {
     $body = "No URL defind in query or body. Will scan all sites."
-    Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
-            StatusCode = [HttpStatusCode]::OK
-            Body       = $body
-        })    
+    $statusCode = [HttpStatusCode]::OK
+
     # upload list of site collections found to blob storage - used by Power BI to ensure we scanned all sites
     $headers = Get-SPOPermissionStorageAccessHeaders
     $body = $sitesCollections | Select-Object -Property Url, Template, FileName | ConvertTo-Csv | Out-String -Width 9999
@@ -85,11 +77,17 @@ else {
 }
 #endregion
 
-#Loop through each site collection to scan
-Write-PSFMessage "Pushing queue message to scan site collections(s)"
-ForEach ($site in $scanList) {
-    Push-OutputBinding -Name SiteCollectionURL -Value $site.Url
-    Write-PSFMessage ("Pushed message for: {0}" -f $site.Url)
+if (-not $badURLFound) {
+    #Loop through each site collection to scan
+    Write-PSFMessage "Pushing queue message to scan site collections(s)"
+    ForEach ($site in $scanList) {
+        Push-OutputBinding -Name SiteCollectionURL -Value $site.Url
+        Write-PSFMessage ("Pushed message for: {0}" -f $site.Url)
+    }
 }
 
-Write-PSFMessage -Level Host -Message "Function executed without errors"
+# return body and HTTP code for manual call
+[HttpResponseContext]@{
+    StatusCode = $statusCode
+    Body       = $body
+}

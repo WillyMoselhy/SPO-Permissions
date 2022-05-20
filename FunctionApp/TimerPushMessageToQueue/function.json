@@ -1,0 +1,17 @@
+{
+  "bindings": [
+    {
+      "name": "Timer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 0 20 1 * *"
+    },
+    {
+      "name": "SiteCollectionURL",
+      "queueName": "sitecollectionstoscan",
+      "connection": "AzureWebJobsStorage",
+      "direction": "out",
+      "type": "queue"
+    }
+  ]
+}

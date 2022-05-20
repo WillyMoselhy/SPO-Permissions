@@ -18,12 +18,12 @@
   "functionTimeout": "-1",
   "extensions": {
     "queues": {
-        "maxPollingInterval": "00:01:00",
-        "visibilityTimeout" : "00:30:00",
-        "batchSize": 2,
-        "maxDequeueCount": 5,
-        "newBatchThreshold": 1,
-        "messageEncoding": "base64"
+      "maxPollingInterval": "00:01:00",
+      "visibilityTimeout": "00:30:00",
+      "batchSize": 2,
+      "maxDequeueCount": 5,
+      "newBatchThreshold": 1,
+      "messageEncoding": "base64"
     }
-}  
+  }
 }
