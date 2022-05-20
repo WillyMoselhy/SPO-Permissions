@@ -3,8 +3,6 @@ using namespace System.Net
 # Input bindings are passed in via param block.
 param($Request, $TriggerMetadata)
 
-
-
 # Write to the Azure Functions log stream.
 Write-PSFMessage -Message  "PowerShell HTTP trigger function processed a request."
 
@@ -56,7 +54,7 @@ if ($targetURLs) {
         if ($url -notin $SitesCollections.Url) {
             $body += "INVALID URL: $url"
             $badURLFound = 1
-
+            Write-PSFMessage -Level Error -Message "URL not in site collection list: $url"
         }
     }
 
@@ -91,7 +89,7 @@ else {
 Write-PSFMessage "Pushing queue message to scan site collections(s)"
 ForEach ($site in $scanList) {
     Push-OutputBinding -Name SiteCollectionURL -Value $site.Url
-    Write-PSFMessage ("Pushed messafge for: {0}" -f $site.Url)
+    Write-PSFMessage ("Pushed message for: {0}" -f $site.Url)
 }
 
 Write-PSFMessage -Level Host -Message "Function executed without errors"
