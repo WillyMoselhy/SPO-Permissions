@@ -26,21 +26,16 @@ $timeStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $tempFolder = New-Item -Path ".\temp\$timeStamp" -ItemType Directory
 Write-PSFMessage -Message "CSVs will be stored in $tempFolder"
 
-# Prepate site object with URL and file path
+# Prepare site object with URL and file path
 $site = [PSCustomObject]@{
     URL      = $SiteCollectionURL
-    FileName = "$($targetURL.Replace('https://','').Replace('/','_')).CSV" 
+    FileName = "$($SiteCollectionURL.Replace('https://','').Replace('/','_')).CSV" 
 }
-Write-PSFMessage -Message  "Will scan against: $targetURL"
-
-#Connect to site collection
-
-
 $filename = $site.FileName
 $reportFile = Join-Path -Path $tempFolder.FullName -ChildPath $filename
 Write-PSFMessage -Level Host -Message  "Report will be stored temporarily as: $reportFile"
 
-
+#Connect to site collection
 $SiteConn = Connect-PnPOnline -Url $Site.Url -ClientId $env:_PnPClientId -Tenant $tenantFQDN -CertificateBase64Encoded $certBase64
 #Call the Function for site collection
 Start-SPOPermissionCollection -SiteURL $Site.URL -ReportFile $reportFile -Recursive -ScanItemLevel -GraphApiToken $env:mgToken -Verbose # -IncludeInheritedPermissions
