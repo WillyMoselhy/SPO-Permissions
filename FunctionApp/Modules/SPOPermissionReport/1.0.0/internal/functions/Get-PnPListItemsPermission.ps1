@@ -9,7 +9,7 @@ Function Get-PnPListItemsPermission {
         [Parameter(Mandatory = $false)] [switch] $IncludeInheritedPermissions
 
     )
-    Write-Host  "`t `t Getting Permissions of List Items in the List:$($List.Title)"
+    Write-PSFMessage -Message   "`t `t Getting Permissions of List Items in the List:$($List.Title)"
 
     #Get All Items from List in batches
     $ListItems = Get-PnPListItem -List $List -PageSize 500

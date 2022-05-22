@@ -13,7 +13,7 @@ Function Generate-PnPSitePermissionRpt {
         $Web = Get-PnPWeb
 
 
-        Write-Host   "Getting Site Collection Administrators..."
+        Write-PSFMessage -Message    "Getting Site Collection Administrators..."
 
         #Get Site Collection Administrators
         $SiteAdmins = Get-PnPSiteCollectionAdmin
@@ -38,11 +38,11 @@ Function Generate-PnPSitePermissionRpt {
         Get-PnPWebPermission -Web $Web -ReportFile $ReportFile -Recursive:$Recursive -ScanItemLevel:$ScanItemLevel -IncludeInheritedPermissions:$IncludeInheritedPermissions
 
 
-        Write-Host  "*** Site Permission Report Generated Successfully!***"
+        Write-PSFMessage -Message   "*** Site Permission Report Generated Successfully!***"
     }
     Catch {
 
-        Write-Host  "Error Generating Site Permission Report! $($_.Exception.Message)"
+        Write-PSFMessage -Message   "Error Generating Site Permission Report! $($_.Exception.Message)"
         throw $_
 
     }

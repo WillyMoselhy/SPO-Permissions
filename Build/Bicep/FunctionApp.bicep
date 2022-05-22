@@ -18,6 +18,7 @@ param AZTenantDefaultDomain string
 param SharePointDomain string
 param PnPClientID string
 param PnPApplicationName string
+param LogAnalyticsMaxLevel int
 param CSVBlobContainerName string = 'output' // Please do not change this
 
 // Variables
@@ -80,6 +81,18 @@ var functionAppSettings = [
     name: 'WEBSITE_LOAD_USER_PROFILE' // This is required in Premium Functions to handle the X509 Certificate properly and avoid file not found error
     value: 1
   }
+  {
+    name:'_WorkspaceId'
+    value: logAnalytics.properties.customerId
+  }
+  {
+    name:'_WorkspaceKey'
+    value: logAnalytics.listkeys().primarySharedKey
+  }
+  {
+    name: '_LogAnalyticsMaxLevel'
+    value: LogAnalyticsMaxLevel
+  }
 ]
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' = {
@@ -96,6 +109,9 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' = {
 }
 resource outputContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-09-01' = {
   name: '${storageAccount.name}/default/${CSVBlobContainerName}'
+}
+resource sitecollectionsqueue 'Microsoft.Storage/storageAccounts/queueServices/queues@2021-09-01' = {
+  name: '${storageAccount.name}/default/sitecollectionstoscan'
 }
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {

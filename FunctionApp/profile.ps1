@@ -15,18 +15,39 @@ if ($env:MSI_SECRET) {
     Disable-AzContextAutosave -Scope Process | Out-Null
     Connect-AzAccount -Identity
 
-    Write-Host "Getting Token as MSI"
-    Write-Host "Getting Microsoft Graph Token"
+    Write-PSFMessage -Message  "Getting Token as MSI"
+    Write-PSFMessage -Message  "Getting Microsoft Graph Token"
     $resourceURI = "https://graph.microsoft.com"
     $tokenAuthURI = $env:IDENTITY_ENDPOINT + "?resource=$resourceURI&api-version=2019-08-01"
     $tokenResponse = Invoke-RestMethod -Method Get -Headers @{"X-IDENTITY-HEADER" = "$env:IDENTITY_HEADER" } -Uri $tokenAuthURI
     $env:mgToken = $tokenResponse.access_token
 }
-else{
+else {
     # THIS is for offline testing - using a Test SP
 }
 
-# Uncomment the next line to enable legacy AzureRm alias in Azure PowerShell.
-# Enable-AzureRmAlias
+#region: Configure PSFramework logging to Workspace
+Set-PSFConfig PSFramework.Logging.Internval 500
+Set-PSFConfig PSFramework.Logging.Internval.Idle 500
+Start-PSFRunspace psframework.logging
 
-# You can also define functions or aliases that can be referenced in any of your PowerShell functions.
+$paramSetPSFLoggingProvider = @{
+    Name         = 'AzureLogAnalytics'
+    InstanceName = 'SPOPermissions'
+    WorkspaceId  = $env:_WorkspaceId
+    SharedKey    = $env:_WorkspaceKey
+    MaxLevel     = $env:_LogAnalyticsMaxLevel
+    Enabled      = $true
+}
+Set-PSFLoggingProvider @paramSetPSFLoggingProvider
+$paramSetPSFLoggingProvider = @{
+    Name    = 'Console'
+    Enabled = $true
+}
+Set-PSFLoggingProvider @paramSetPSFLoggingProvider
+Start-Sleep -Seconds 1
+#endregion
+
+Write-PSFMessage -Message "Profile load complete"
+
+

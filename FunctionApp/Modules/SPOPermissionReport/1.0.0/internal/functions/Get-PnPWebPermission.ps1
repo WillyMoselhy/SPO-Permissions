@@ -10,11 +10,11 @@ Function Get-PnPWebPermission {
         [Parameter(Mandatory = $false)] [switch] $IncludeInheritedPermissions
     )
     #Call the function to Get permissions of the web
-    Write-Host  "Getting Permissions of the Web: $($Web.URL)..."
+    Write-PSFMessage -Message   "Getting Permissions of the Web: $($Web.URL)..."
     Get-PnPPermissions -Object $Web -ReportFile $ReportFile
 
     #Get List Permissions
-    Write-Host  "`t Getting Permissions of Lists and Libraries..."
+    Write-PSFMessage -Message   "`t Getting Permissions of Lists and Libraries..."
     Get-PnPListPermission -Web $Web -ReportFile $ReportFile -ScanItemLevel:$ScanItemLevel -IncludeInheritedPermissions:$IncludeInheritedPermissions
 
     #Recursively get permissions from all sub-webs based on the "Recursive" Switch

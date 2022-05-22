@@ -10,8 +10,8 @@ ForEach($Site in $SitesCollections)
 {
     #Connect to site collection
     $SiteConn = Connect-PnPOnline -Url $Site.Url -Credentials $Cred
-    Write-host "Generating Report for Site:"$Site.Url
-    Write-Host  "Generating Report for Site:$($Site.Url)"
+    Write-PSFMessage -Message  "Generating Report for Site:"$Site.Url
+    Write-PSFMessage -Message   "Generating Report for Site:$($Site.Url)"
 
     #Call the Function for site collection
     $ReportFile = "C:\Temp\$($Site.URL.Replace('https://','').Replace('/','_')).CSV"

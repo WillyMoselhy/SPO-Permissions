@@ -1,0 +1,26 @@
+{
+  "bindings": [
+    {
+      "authLevel": "function",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "Request",
+      "methods": [
+        "get",
+        "post"
+      ]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "Response"
+    },
+    {
+      "name": "SiteCollectionURL",
+      "queueName": "sitecollectionstoscan",
+      "connection": "AzureWebJobsStorage",
+      "direction": "out",
+      "type": "queue"
+    }
+  ]
+}

@@ -11,13 +11,11 @@ function Start-SPOPermissionCollection {
     )
     $script:GraphApiToken = $GraphApiToken
 
-    Write-Host "Getting all site collections"
-    $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn ("SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1")
-
+    
     try {
         #Get the Web
         $web = Get-PnPWeb
-        Write-Host "Getting Site Collection Administrators..."
+        Write-PSFMessage -Message  "Getting Site Collection Administrators..."
         #Get Site Collection Administrators
         $siteAdmins = Get-PnPSiteCollectionAdmin
         $siteCollectionAdmins = ($siteAdmins | Select-Object -ExpandProperty Title) -join ","
@@ -37,7 +35,7 @@ function Start-SPOPermissionCollection {
         $permissions | Export-Csv -Path $ReportFile
 
         Get-PnPWebPermission -Web $Web -ReportFile $ReportFile -Recursive:$Recursive -ScanItemLevel:$ScanItemLevel -IncludeInheritedPermissions:$IncludeInheritedPermissions
-        Write-Host "*** Site Permission Report Generated Successfully!***"
+        Write-PSFMessage -Message  "*** Site Permission Report Generated Successfully!***"
 
     }
     Catch {

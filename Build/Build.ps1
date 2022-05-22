@@ -6,7 +6,7 @@ $FunctionAppName = 'func-ecl-SPOPerm-01'
 $StorageAccountName = 'saeclfuncspoperm0122'
 $KeyVaultName = 'funcecpSPOPerm01kv22516'
 $PnPApplicationName = "func-ecl-SPOPerm-01-PnPApp"
-
+$LogAnalyticsMaxLevel = 5
 # Validate inputs
 if ($KeyVaultName.Length -gt 24) { Throw "Keyvault name too long" }
 if ($StorageAccountName.Length -gt 24) { Throw "Keyvault name too long" }
@@ -38,13 +38,13 @@ Import-Module PnP.PowerShell
 $pnpSerivcePrincipal = Get-AzADServicePrincipal -DisplayName $PnPApplicationName
 
 if ($null -eq $pnpSerivcePrincipal) {
-    Write-Host "Registering PnP Application"
+    Write-PSFMessage -Message  "Registering PnP Application"
     $pnpSerivcePrincipal = Register-PnPAzureADApp -ApplicationName $PnPApplicationName -Tenant $defaultDomain -Interactive -ErrorAction Stop
     $certBase64 = $pnpSerivcePrincipal.Base64Encoded
     $pnpClientID = $pnpSerivcePrincipal.'AzureAppId/ClientId'
 }
 else {
-    Write-Host "PnP App is already registered: $PnPApplicationName"
+    Write-PSFMessage -Message  "PnP App is already registered: $PnPApplicationName"
     $certBase64 = [system.Convert]::ToBase64String(([System.IO.File]::ReadAllBytes('.\func-ecl-SPOPerm-01-PnPApp.pfx')))
     $pnpClientID = $pnpSerivcePrincipal.AppId
     # TODO: Check the certificates and make sure this part works properly    
@@ -64,6 +64,7 @@ $deploymentParams = @{
     KeyVaultName          = $KeyVaultName
     AZTenantDefaultDomain = $defaultDomain
     SharePointDomain      = $sharePointDomain
+    LogAnalyticsMaxLevel  = $LogAnalyticsMaxLevel
     
     # For SharePoint PnP Module
     PnPApplicationName    = $PnPApplicationName
@@ -92,7 +93,7 @@ else {
 # Update permissions for the storage account output blob container
 $storageRoleName = "Storage Blob Data Contributor"
 if (-Not (Get-AzRoleAssignment -Scope $bicepDeployment.Outputs.outputContainerId.Value -RoleDefinitionName $storageRoleName -ObjectId $msiID)) {
-    Write-Host "Assigning role $storageRoleName to Function App MSI $msiID"
+    Write-PSFMessage -Message  "Assigning role $storageRoleName to Function App MSI $msiID"
     New-AzRoleAssignment -Scope $bicepDeployment.Outputs.outputContainerId.Value -RoleDefinitionName $storageRoleName -ApplicationId $appId 
 }
 else {
