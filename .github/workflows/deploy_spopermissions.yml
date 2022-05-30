@@ -22,7 +22,7 @@ jobs:
         uses: Azure/functions-action@v1
         id: fa
         with:
-          app-name: 'func-ecl-SPOPerm-01'
+          app-name: 'func-SPOPerm-01-20220530'
           slot-name: ''
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           publish-profile: ${{ secrets.PUBLISH_PROFILE }}
