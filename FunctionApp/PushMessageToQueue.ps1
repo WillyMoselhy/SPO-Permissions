@@ -2,35 +2,37 @@
 param (
     [Parameter(Mandatory = $false)]
     [string]
-    $URL
+    $URL,
+
+    [switch] $CalledByHTTP #This is to avoid errors when returning HTTP codes to timer trigger
 )
 
 
 #region: get list of all site collections
 $azTenant = Get-AzTenant
 $tenantId = $azTenant.TenantId
-$tenantFQDN = $env:_AZTenantDefaultDomain  
-Write-PSFMessage -Message  "Got tenant information: $tenantId - $tenantFQDN"
+$tenantFQDN = $env:_AZTenantDefaultDomain
+Write-PSFMessage -Message "Got tenant information: $tenantId - $tenantFQDN"
 
 
 $certBase64 = Get-AzKeyVaultSecret -ResourceId $env:_PnPPowerShell_KeyVaultId -Name $env:_PnPApplicationName -AsPlainText -ErrorAction Stop
-Write-PSFMessage -Message  "Got PnP Application certificate as Base64"
+Write-PSFMessage -Message "Got PnP Application certificate as Base64"
 
 Connect-PnPOnline -Url "https://$env:_SharePointDomain" -ClientId $env:_PnPClientId -Tenant $tenantFQDN -CertificateBase64Encoded $certBase64 -ErrorAction Stop
 
-Write-PSFMessage -Message  "Connected to PNP"
+Write-PSFMessage -Message "Connected to PNP"
 
 
-Write-PSFMessage -Message  "Getting list of SharePoint site collections."
+Write-PSFMessage -Message "Getting list of SharePoint site collections."
 $skippedTempaltes = @(
     "SRCHCEN#0", "SPSMSITEHOST#0", "APPCATALOG#0", "POINTPUBLISHINGHUB#0", "EDISC#0", "STS#-1", "OINTPUBLISHINGTOPIC#0", "TEAMCHANNEL#0", "TEAMCHANNEL#1"
 )
 $SitesCollections = Get-PnPTenantSite | Where-Object -Property Template -NotIn $skippedTempaltes
 # Calculate file name for each site
 $SitesCollections | ForEach-Object {
-    $_ | Add-Member -MemberType NoteProperty -Name FileName -Value "$($_.URL.Replace('https://','').Replace('/','_')).CSV" 
+    $_ | Add-Member -MemberType NoteProperty -Name FileName -Value "$($_.URL.Replace('https://','').Replace('/','_')).CSV"
 }
-Write-PSFMessage -Message  "Found $($sitesCollections.Count) sites"
+Write-PSFMessage -Message "Found $($sitesCollections.Count) sites"
 
 #endregion
 
@@ -52,9 +54,9 @@ if ($URL) {
         }
     }
 
-    if ($badURLFound) { 
+    if ($badURLFound ) {
         $statusCode = [HttpStatusCode]::BadRequest
-        #Stop-PSFFunction -Message 'Bad URLs supplied' -EnableException $true 
+        #Stop-PSFFunction -Message 'Bad URLs supplied' -EnableException $true
     }
     else {
         $statusCode = [HttpStatusCode]::OK
@@ -62,16 +64,20 @@ if ($URL) {
     }
 }
 else {
-    $body = "No URL defind in query or body. Will scan all sites."
-    $statusCode = [HttpStatusCode]::OK
+    # If no URL is defined we scan all site collections and update the Site Collections CSV list
+
+    if ($CalledByHTTP) {
+        $body = "No URL defined in query or body. Will scan all sites."
+        $body += $sitesCollections | Select-Object -Property Url, Template, FileName | ConvertTo-Csv | Out-String -Width 9999
+        $statusCode = [HttpStatusCode]::OK
+    }
 
     # upload list of site collections found to blob storage - used by Power BI to ensure we scanned all sites
     $headers = Get-SPOPermissionStorageAccessHeaders
-    $body = $sitesCollections | Select-Object -Property Url, Template, FileName | ConvertTo-Csv | Out-String -Width 9999
-    $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/SiteCollections.csv" 
-    Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body 
+    $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/SiteCollections.csv"
+    Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body
 
-    Write-PSFMessage -Message  "Uploaded list of Site Collections"
+    Write-PSFMessage -Message "Uploaded list of Site Collections"
 
     $scanList = $SitesCollections
 }
@@ -86,8 +92,10 @@ if (-not $badURLFound) {
     }
 }
 
-# return body and HTTP code for manual call
-[HttpResponseContext]@{
-    StatusCode = $statusCode
-    Body       = $body
+if ($CalledByHTTP) {
+    # return body and HTTP code for manual call
+    [HttpResponseContext]@{
+        StatusCode = $statusCode
+        Body       = $body
+    }
 }
