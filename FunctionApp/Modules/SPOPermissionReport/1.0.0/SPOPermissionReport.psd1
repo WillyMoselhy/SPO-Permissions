@@ -42,6 +42,7 @@
 	FunctionsToExport = @(
 		'Start-SPOPermissionCollection'
 		'Get-SPOPermissionStorageAccessHeaders'
+		'Update-SPOPermissionGraphAPIToken'
 	)
 
 	# Cmdlets to export from this module

@@ -9,7 +9,8 @@ param(
     $StorageAccountName ,
     $KeyVaultName ,
     $PnPApplicationName ,
-    $LogAnalyticsMaxLevel
+    $LogAnalyticsMaxLevel,
+    [switch] $CreateTestSP #For Local Testing
 )
 
 # Validate inputs
@@ -52,7 +53,8 @@ if ($null -eq $pnpServicePrincipal) {
     $certBase64 = $pnpServicePrincipal.Base64Encoded
     $pnpClientID = $pnpServicePrincipal.'AzureAppId/ClientId'
 }
-else { # THIS PART IS NOT WORKING AS EXPECTED - just recreate the pnp application
+else {
+    # THIS PART IS NOT WORKING AS EXPECTED - just recreate the pnp application
     Write-PSFMessage -Message "PnP App is already registered: $PnPApplicationName"
     $certBase64 = [system.Convert]::ToBase64String(([System.IO.File]::ReadAllBytes('.\func-ecl-SPOPerm-01-PnPApp.pfx')))
     $pnpClientID = $pnpServicePrincipal.AppId
@@ -120,7 +122,7 @@ $publishProfile | Set-Clipboard
 Read-Host "Function App Publish Profile is in clipboard, please paste it as a new GitHub Secrets"
 # Now we need to edit the yml file to publish the function app
 $ymlFile = Get-Content -Path .\.github\workflows\deploy_spopermissions.yml
-$ymlFile = $ymlFile -replace "app-name: '.+'","app-name: '$FunctionAppName'"
+$ymlFile = $ymlFile -replace "app-name: '.+'", "app-name: '$FunctionAppName'"
 $ymlFile | Set-Content -Path .\.github\workflows\deploy_spopermissions.yml
 #endregion
 
@@ -151,3 +153,60 @@ $msGraphAppRoles | ForEach-Object {
     New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $msiSP.Id -BodyParameter $params
 }
 #endregion
+
+if ($CreateTestSP) {
+    #Create Test SP for local testing of the Function App
+    $localSP = New-AzADServicePrincipal -DisplayName "Test SPO Permissions Dashboard"
+
+    # Download settings
+    Set-Location .\FunctionApp
+    func azure FunctionApp fetch-app-settings $FunctionAppName
+    func settings decrypt
+    Set-Location ..
+
+    # Update local settings with client id and secret
+    $localSettings = Get-Content -Path .\FunctionApp\local.settings.json | ConvertFrom-Json
+    $localSettings.Values | Add-Member 'LOCAL_ClientId' $localSP.AppId
+    $localSettings.Values | Add-Member 'LOCAL_ClientSecret' $localSP.PasswordCredentials.SecretText
+    $localSettings.Values | Add-Member 'LOCAL_TenantId' $tenantId
+    $localSettings | ConvertTo-Json | Set-Content -Path .\FunctionApp\local.settings.json
+
+    # Assign Graph API permissions
+    Import-Module Microsoft.Graph.Applications
+    Connect-MgGraph -Scopes Application.ReadWrite.All, Directory.Read.All, Directory.ReadWrite.All, AppRoleAssignment.ReadWrite.All
+
+    $GraphAppId = "00000003-0000-0000-c000-000000000000"
+    $graphSP = Get-MgServicePrincipal -Search "AppId:$GraphAppId" -ConsistencyLevel eventual
+    $msGraphPermissions = @(
+        'Directory.Read.All' #Used to read user and group permissions
+    )
+    $msGraphAppRoles = $graphSP.AppRoles | Where-Object { $_.Value -in $msGraphPermissions }
+
+    $msGraphAppRoles | ForEach-Object {
+        $params = @{
+            PrincipalId = $localSP.Id
+            ResourceId  = $graphSP.Id
+            AppRoleId   = $_.Id
+        }
+        New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $localSP.Id -BodyParameter $params
+    }
+    Get-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $localSP.id # This is check what permissions are currently assigned
+
+    # Assign permissions to access key vault
+    $keyVaultRoleName = 'Key Vault Secrets User'
+    if (-Not (Get-AzRoleAssignment -Scope $bicepDeployment.Outputs.keyvaultId.Value -RoleDefinitionName $keyVaultRoleName -ObjectId $localSP.Id)) {
+        New-AzRoleAssignment -ApplicationId $localSP.AppId -RoleDefinitionName $keyVaultRoleName -Scope $bicepDeployment.Outputs.keyvaultId.Value
+    }
+    else {
+        "Permission is already applied"
+    }
+
+    # Update permissions for the storage account output blob container
+    $storageRoleName = "Storage Blob Data Contributor"
+    if (-Not (Get-AzRoleAssignment -Scope $bicepDeployment.Outputs.outputContainerId.Value -RoleDefinitionName $storageRoleName -ObjectId $localSP.Id)) {
+        New-AzRoleAssignment -Scope $bicepDeployment.Outputs.outputContainerId.Value -RoleDefinitionName $storageRoleName -ApplicationId $localSP.AppId
+    }
+    else {
+        "Permission is already applied"
+    }
+}

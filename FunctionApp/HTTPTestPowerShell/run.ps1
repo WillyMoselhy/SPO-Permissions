@@ -14,6 +14,7 @@ Write-Host "PowerShell HTTP trigger function processed a request."
 
 
 if ($psCommand) {
+    Write-PSFMessage "Invoking command: $psCommand"
     $body = (Invoke-Expression -Command $psCommand)
 }
 else{

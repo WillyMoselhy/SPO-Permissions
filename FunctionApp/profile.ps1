@@ -12,24 +12,27 @@
 # Authenticate with Azure PowerShell using MSI.
 # Remove this if you are not planning on using MSI or Azure PowerShell.
 if ($env:MSI_SECRET) {
+    Write-PSFMessage -Message "Running in Azure environment - Connecting with MSI"
     Disable-AzContextAutosave -Scope Process | Out-Null
     Connect-AzAccount -Identity
-
-    Write-PSFMessage -Message  "Getting Token as MSI"
-    Write-PSFMessage -Message  "Getting Microsoft Graph Token"
-    $resourceURI = "https://graph.microsoft.com"
-    $tokenAuthURI = $env:IDENTITY_ENDPOINT + "?resource=$resourceURI&api-version=2019-08-01"
-    $tokenResponse = Invoke-RestMethod -Method Get -Headers @{"X-IDENTITY-HEADER" = "$env:IDENTITY_HEADER" } -Uri $tokenAuthURI
-    $env:mgToken = $tokenResponse.access_token
 }
 else {
     # THIS is for offline testing - using a Test SP
+    Write-PSFMessage -Message  "Running in local environment - Connecting with Service Principal"
+    $spCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $env:LOCAL_ClientId, ($env:LOCAL_ClientSecret | ConvertTo-SecureString -AsPlainText -Force)
+    $null = Connect-AzAccount  -ServicePrincipal -Credential $spCreds -Tenant $env:LOCAL_TenantId -WarningAction SilentlyContinue
+    Write-PSFMessage -Message "Connected to Azure using service principal"
 }
 
+Write-PSFMessage -Message  "Getting Microsoft Graph Token"
+Update-SPOPermissionGraphAPIToken
+
 #region: Configure PSFramework logging to Workspace
+Write-PSFMessage -Message "Setting Log Analytics for PSFramework"
+
 Set-PSFConfig PSFramework.Logging.Internval 500
 Set-PSFConfig PSFramework.Logging.Internval.Idle 500
-Start-PSFRunspace psframework.logging
+Start-PSFRunspace psframework.logging -NoMessage
 
 $paramSetPSFLoggingProvider = @{
     Name         = 'AzureLogAnalytics'
@@ -49,5 +52,3 @@ Start-Sleep -Seconds 1
 #endregion
 
 Write-PSFMessage -Message "Profile load complete"
-
-

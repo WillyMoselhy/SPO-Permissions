@@ -12,13 +12,12 @@ if (-not $targetURLs) {
 }
 
 if($targetURLs){
-    $result = .\PushMessageToQueue.ps1 -URL $targetURLs -CalledByHTTP
+    Write-PSFMessage "Calling Push Message Script With URL"
+    .\PushMessageToQueue.ps1 -URL $targetURLs -CalledByHTTP
 }
 else{
-    $result = .\PushMessageToQueue.ps1  -CalledByHTTP
+    Write-PSFMessage "Calling Push Message Script without URL"
+    .\PushMessageToQueue.ps1  -CalledByHTTP
 }
-
-
-Push-OutputBinding -Name Response -Value $result
 
 Write-PSFMessage -Level Host -Message "Function executed without errors"

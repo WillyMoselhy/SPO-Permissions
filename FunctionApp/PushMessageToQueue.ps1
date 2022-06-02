@@ -65,17 +65,19 @@ if ($URL) {
 }
 else {
     # If no URL is defined we scan all site collections and update the Site Collections CSV list
+    $csv =  $sitesCollections | Select-Object -Property Url, Template, FileName | ConvertTo-Csv | Out-String -Width 9999
 
     if ($CalledByHTTP) {
         $body = "No URL defined in query or body. Will scan all sites."
-        $body += $sitesCollections | Select-Object -Property Url, Template, FileName | ConvertTo-Csv | Out-String -Width 9999
+        $body += $csv
         $statusCode = [HttpStatusCode]::OK
     }
 
     # upload list of site collections found to blob storage - used by Power BI to ensure we scanned all sites
     $headers = Get-SPOPermissionStorageAccessHeaders
     $url = "https://$env:_StorageAccountName.blob.core.windows.net/$env:_CSVBlobContainerName/SiteCollections.csv"
-    Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $body
+
+    Invoke-RestMethod -Method PUT -Uri $url -Headers $headers -Body $csv
 
     Write-PSFMessage -Message "Uploaded list of Site Collections"
 
@@ -94,8 +96,10 @@ if (-not $badURLFound) {
 
 if ($CalledByHTTP) {
     # return body and HTTP code for manual call
-    [HttpResponseContext]@{
+    Write-PSFMessage "Returning HTTP result: Status - $statusCode"
+
+    Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
         StatusCode = $statusCode
         Body       = $body
-    }
+    })
 }
