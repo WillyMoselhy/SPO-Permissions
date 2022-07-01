@@ -46,7 +46,7 @@ $SiteConn = Connect-PnPOnline -Url $Site.Url -ClientId $env:_PnPClientId -Tenant
 #Call the Function for site collection
 Update-SPOPermissionGraphAPIToken #This updates the environment variable to make sure token is valid
 Start-SPOPermissionCollection -SiteURL $Site.URL -ReportFile $reportFile -Recursive -ScanItemLevel -GraphApiToken $env:mgToken -Verbose # -IncludeInheritedPermissions
-Disconnect-PnPOnline -Connection $SiteConn
+Disconnect-PnPOnline
 
 # Pickup the stored CSV for upload
 $body = Get-Content -Path $reportFile | Out-String -Width 9999
