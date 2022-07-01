@@ -8,4 +8,6 @@
     'PnP.PowerShell' = '1.*'
     'MSAL.PS'        = '4.*'
     'Az.KeyVault'    = '4.*'
+    'Microsoft.Graph.Users' = '1.*'
+    'Microsoft.Graph.Groups' = '1.*'
 }
