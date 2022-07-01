@@ -37,16 +37,17 @@ function Start-SPOPermissionCollection {
                     }
                 }
                 "SecurityGroup" {
-                    $groupMembers = Get-SPOmgGroupTransitiveMember -GroupEmail $admin.Email
+                    $groupId = $admin.LoginName -replace ".*([\da-zA-Z]{8}-([\da-zA-Z]{4}-){3}[\da-zA-Z]{12}).*",'$1'
+                    $mgGroup = Get-SPOmgGroupTransitiveMember -GroupId $groupId
                     [PSCustomObject]@{
-                        Object               = "Site Collection"
-                        Title                = $web.Title
-                        URL                  = $web.URL
-                        HasUniquePermissions = "TRUE"
-                        Users                = $groupMembers -join ","
-                        Type                 = "Security Group"
-                        Permissions          = "Site Owner"
-                        GrantedThrough       = $admin.Email
+                        Object               = $ObjectType
+                        Title                = $ObjectTitle
+                        URL                  = $ObjectURL
+                        HasUniquePermissions = $HasUniquePermissions
+                        Users                = $mgGroup.Users -join ","
+                        Type                 = 'Security Group'
+                        Permissions          = $PermissionLevels
+                        GrantedThrough       = $mgGroup.DisplayName
                     }
                 }
                 Default {
