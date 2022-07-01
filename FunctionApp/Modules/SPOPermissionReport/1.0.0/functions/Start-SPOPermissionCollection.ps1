@@ -25,7 +25,7 @@ function Start-SPOPermissionCollection {
             Write-PSFMessage -Message "Site Collection admin {0} is a {1}" -StringValues $admin.Email, $admin.PrinciaplType
             switch ($admin.PrincipalType) {
                 "User" {
-                    [PSCustomObjet] {
+                    [PSCustomObject] {
                         [PSCustomObject]@{
                             Object               = "Site Collection"
                             Title                = $web.Title
