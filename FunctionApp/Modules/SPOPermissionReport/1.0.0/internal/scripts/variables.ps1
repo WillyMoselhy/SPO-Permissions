@@ -1,1 +1,1 @@
-$script:Groups = @()
+$script:Groups = @() # TODO:This should be a hash table

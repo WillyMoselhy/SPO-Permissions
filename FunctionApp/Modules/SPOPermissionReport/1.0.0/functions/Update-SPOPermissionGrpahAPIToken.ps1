@@ -1,13 +1,17 @@
 function Update-SPOPermissionGraphAPIToken {
+    <#
+    .SYNOPSIS
+        This function should check for the Graph API token validity and (re)connect to Microsoft Graph
+    #>
     [CmdletBinding()]
     param (
 
     )
     $currentTime = Get-Date
-    if($env:mgTokenExpiryTimeStamp){
+    if ($env:mgTokenExpiryTimeStamp) {
         $timeToExpire = New-TimeSpan -Start $currentTime -End $env:mgTokenExpiryTimeStamp
     }
-    else{
+    else {
         $timeToExpire = New-TimeSpan -Start $currentTime -End $currentTime
     }
 
@@ -41,7 +45,10 @@ function Update-SPOPermissionGraphAPIToken {
                 'ContentType' = 'application/x-www-form-urlencoded'
             }
 
-            $env:mgToken = (Invoke-RestMethod @Params).access_token
+            $env:mgToken = (Invoke-RestMethod @Params).access_token #TODO Remove this variable once we move to mgGraph completely
+
+            Write-PSFMessage -Message "Connecting to Graph API using new token"
+            Connect-MgGraph -AccessToken $env:mgToken
         }
         $env:mgTokenExpiryTimeStamp = $currentTime.AddSeconds(1800) # We expire after 30 minutes to keep things fresh.
     }
