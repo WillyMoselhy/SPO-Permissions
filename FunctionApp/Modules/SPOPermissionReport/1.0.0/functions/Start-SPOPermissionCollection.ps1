@@ -25,17 +25,15 @@ function Start-SPOPermissionCollection {
             Write-PSFMessage -Message "Site Collection admin {0} is a {1}" -StringValues $admin.Email, $admin.PrincipalType
             switch ($admin.PrincipalType) {
                 "User" {
-                    [PSCustomObject] {
-                        [PSCustomObject]@{
-                            Object               = "Site Collection"
-                            Title                = $web.Title
-                            URL                  = $web.URL
-                            HasUniquePermissions = "TRUE"
-                            Users                = $admin.Title
-                            Type                 = "User"
-                            Permissions          = "Site Owner"
-                            GrantedThrough       = "Direct Permissions"
-                        }
+                    [PSCustomObject]@{
+                        Object               = "Site Collection"
+                        Title                = $web.Title
+                        URL                  = $web.URL
+                        HasUniquePermissions = "TRUE"
+                        Users                = $admin.Title
+                        Type                 = "User"
+                        Permissions          = "Site Owner"
+                        GrantedThrough       = "Direct Permissions"
                     }
                 }
                 "SecurityGroup" {
