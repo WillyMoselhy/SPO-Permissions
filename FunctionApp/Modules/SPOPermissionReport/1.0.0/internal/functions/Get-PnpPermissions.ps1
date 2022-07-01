@@ -136,13 +136,13 @@ Function Get-PnPPermissions {
             }
             Default {
                 #Add the Data to Object (most probably a user)
-                Write-PSFMessage -Message "Adding permissions for $($RoleAssignment.Member.Title)"
+                Write-PSFMessage -Message "Adding permissions for $($RoleAssignment.Member.UserPrincipalName)"
                 $permissionCollection += [PSCustomObject]@{
                     Object               = $ObjectType
                     Title                = $ObjectTitle
                     URL                  = $ObjectURL
                     HasUniquePermissions = $HasUniquePermissions
-                    Users                = $RoleAssignment.Member.Title
+                    Users                = $RoleAssignment.Member.UserPrincipalName
                     Type                 = $PermissionType
                     Permissions          = $PermissionLevels
                     GrantedThrough       = 'Direct Permissions'
