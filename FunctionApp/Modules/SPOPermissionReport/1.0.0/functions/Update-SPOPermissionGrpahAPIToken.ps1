@@ -4,7 +4,13 @@ function Update-SPOPermissionGraphAPIToken {
 
     )
     $currentTime = Get-Date
-    $timeToExpire = New-TimeSpan -Start $currentTime -End $env:mgTokenExpiryTimeStamp
+    if($env:mgTokenExpiryTimeStamp){
+        $timeToExpire = New-TimeSpan -Start $currentTime -End $env:mgTokenExpiryTimeStamp
+    }
+    else{
+        $timeToExpire = New-TimeSpan -Start $currentTime -End $currentTime
+    }
+
     if ($timeToExpire.TotalSeconds -le 0) {
         # Token has expired and should be renewed
         Write-PSFMessage -Message "Graph API token expired. Getting new token."
