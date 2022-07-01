@@ -10,8 +10,9 @@ function Get-SPOmgGroupTransitiveMember {
         Write-PSFMessage -Message "MG Group retrieved from cache"
     }
     else{
+        # TODO: Add support for Service Principals (currently available in mg Beta)
         $group = Get-MgGroup -GroupId $GroupId -Property displayName
-        $users = Get-MgGroupTransitiveMember -GroupId $GroupId -Property userPrincipalName
+        $users = Get-MgGroupTransitiveMember -GroupId $GroupId -Property userPrincipalName -All
         $mgGroup = [PSCustomObject]@{
             DisplayName = $group.DisplayName
             Users = $users.AdditionalProperties.userPrincipalName
