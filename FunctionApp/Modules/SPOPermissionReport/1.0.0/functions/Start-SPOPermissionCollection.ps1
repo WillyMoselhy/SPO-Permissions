@@ -22,7 +22,7 @@ function Start-SPOPermissionCollection {
 
         Write-PSFMessage -Message "Site Collection has {0} admins" -StringValues $siteCollectionAdmins.count
         $permissions = foreach ($admin in $siteCollectionAdmins) {
-            Write-PSFMessage -Message "Site Collection admin {0} is a {1}" -StringValues $admin.Email, $admin.PrinciaplType
+            Write-PSFMessage -Message "Site Collection admin {0} is a {1}" -StringValues $admin.Email, $admin.PrincipalType
             switch ($admin.PrincipalType) {
                 "User" {
                     [PSCustomObject] {

@@ -1,7 +1,7 @@
 function Get-SPOmgGroupTransitiveMember {
     [CmdletBinding()]
     param (
-        [string] $Email
+        [string] $GroupEmail
     )
 
     # Checking if group members are already cached
