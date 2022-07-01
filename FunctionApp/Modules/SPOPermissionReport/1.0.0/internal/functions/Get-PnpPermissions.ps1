@@ -101,7 +101,8 @@ Function Get-PnPPermissions {
                     Users                = $groupMembers.Users -join ","
                     Type                 = $PermissionType
                     Permissions          = $PermissionLevels
-                    GrantedThrough       = "SharePoint Group: $($RoleAssignment.Member.LoginName)"
+                    SharePointGroup      = $RoleAssignment.Member.LoginName
+                    GrantedThrough       = ""
                 }
 
                 # Permission for Security Groups in SharePoint Group
@@ -116,6 +117,7 @@ Function Get-PnPPermissions {
                         Users                = $mgGroup.Users -join ","
                         Type                 = 'Security Group'
                         Permissions          = $PermissionLevels
+                        SharePointGroup      = $RoleAssignment.Member.LoginName
                         GrantedThrough       = $mgGroup.DisplayName
                     }
                 }
@@ -131,6 +133,7 @@ Function Get-PnPPermissions {
                     Users                = $mgGroup.Users -join ","
                     Type                 = 'Security Group'
                     Permissions          = $PermissionLevels
+                    SharePointGroup      = ""
                     GrantedThrough       = $mgGroup.DisplayName
                 }
             }
@@ -145,6 +148,7 @@ Function Get-PnPPermissions {
                     Users                = $RoleAssignment.Member.UserPrincipalName
                     Type                 = $PermissionType
                     Permissions          = $PermissionLevels
+                    SharePointGroup      = ""
                     GrantedThrough       = 'Direct Permissions'
                 }
             }

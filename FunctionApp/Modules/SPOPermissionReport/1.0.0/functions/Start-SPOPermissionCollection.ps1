@@ -33,6 +33,7 @@ function Start-SPOPermissionCollection {
                         Users                = $admin.Title
                         Type                 = "User"
                         Permissions          = "Site Owner"
+                        SharePointGroup      = ""
                         GrantedThrough       = "Direct Permissions"
                     }
                 }
@@ -47,6 +48,7 @@ function Start-SPOPermissionCollection {
                         Users                = $mgGroup.Users -join ","
                         Type                 = 'Security Group'
                         Permissions          = $PermissionLevels
+                        SharePointGroup      = ""
                         GrantedThrough       = $mgGroup.DisplayName
                     }
                 }
