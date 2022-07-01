@@ -77,6 +77,9 @@ $deploymentParams = @{
     SharePointDomain      = $sharePointDomain
     LogAnalyticsMaxLevel  = $LogAnalyticsMaxLevel
 
+    # PowerShell version # there is a known bug in PnP 1.10.0 with PowerShell 7.2 on azure functions https://github.com/pnp/powershell/issues/2032
+    PowerShellVersion = 7.0
+
     # For SharePoint PnP Module
     PnPApplicationName    = $PnPApplicationName
     PnPClientID           = $pnpClientID

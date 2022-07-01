@@ -20,6 +20,7 @@ param PnPClientID string
 param PnPApplicationName string
 param LogAnalyticsMaxLevel int
 param CSVBlobContainerName string = 'output' // Please do not change this
+param PowerShellVersion string
 
 // Variables
 var keyVaultAdministratorRoleId = '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Authorization/roleDefinitions/00482a5a-887f-4fb3-b363-3b7fe8e74483'
@@ -164,7 +165,7 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
     serverFarmId: appServicePlan.id
     siteConfig: {
       use32BitWorkerProcess: false
-      powerShellVersion: '7.2'
+      powerShellVersion: PowerShellVersion
       netFrameworkVersion: 'v6.0'
       appSettings: functionAppSettings
     }

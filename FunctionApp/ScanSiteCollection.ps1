@@ -4,6 +4,12 @@ param (
     [string]
     $SiteCollectionURL
 )
+trap{
+    Write-PSFMessage -Level Error -Message "Scan Site Collection Failed" -ErrorRecord $_
+    Write-PSFMessage -Level Debug -Message ($_ | ConvertTo-PSFClixml -Depth 5) -Tag ErrorData
+    Wait-PSFMessage
+    throw $_
+}
 Write-PSFMessage -Level Host -Message  "Starting scan for: $SiteCollectionURL"
 
 # get information about the tenant

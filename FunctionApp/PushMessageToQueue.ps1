@@ -6,7 +6,12 @@ param (
 
     [switch] $CalledByHTTP #This is to avoid errors when returning HTTP codes to timer trigger
 )
-
+trap{
+    Write-PSFMessage -Level Error -Message "Scan Site Collection Failed" -ErrorRecord $_
+    Write-PSFMessage -Level Debug -Message ($_ | ConvertTo-PSFClixml -Depth 5) -Tag ErrorData
+    Wait-PSFMessage
+    throw $_
+}
 
 #region: get list of all site collections
 $azTenant = Get-AzTenant
