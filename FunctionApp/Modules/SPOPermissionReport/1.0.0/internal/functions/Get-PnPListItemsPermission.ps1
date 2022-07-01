@@ -9,12 +9,12 @@ Function Get-PnPListItemsPermission {
         [Parameter(Mandatory = $false)] [switch] $IncludeInheritedPermissions
 
     )
-    Write-PSFMessage -Message   "`t `t Getting Permissions of List Items in the List:$($List.Title)"
+    Write-PSFMessage -Message "`t `t Getting Permissions of List Items in the List:$($List.Title)"
 
     #Get All Items from List in batches
-    $ListItems = Get-PnPListItem -List $List -PageSize 500
+    $ListItems = Get-PnPListItem -List $List
 
-    $ItemCounter = 0
+
     #Loop through each List item
     ForEach ($ListItem in $ListItems) {
         #Get Objects with Unique Permissions or Inherited Permissions based on 'IncludeInheritedPermissions' switch
@@ -29,7 +29,5 @@ Function Get-PnPListItemsPermission {
                 Get-PnPPermissions -Object $ListItem -ReportFile $ReportFile
             }
         }
-        $ItemCounter++
-        Write-Progress -PercentComplete ($ItemCounter / ($List.ItemCount) * 100) -Activity "Processing Items $ItemCounter of $($List.ItemCount)" -Status "Searching Unique Permissions in List Items of '$($List.Title)'"
     }
 }

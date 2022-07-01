@@ -7,7 +7,7 @@ Function Get-PnPPermissions {
     )
 
     #Determine the type of the object
-    Write-PSFMessage -Message "Working on a new Object"
+    Write-PSFMessage -Message   "Working on a new Object"
     Switch ($Object.TypedObject.ToString()) {
         "Microsoft.SharePoint.Client.Web" {
             $ObjectType = "Site"
@@ -49,8 +49,8 @@ Function Get-PnPPermissions {
             $ObjectURL = $("{0}{1}" -f $Web.Url.Replace($Web.ServerRelativeUrl, ''), $RootFolder.ServerRelativeUrl)
         }
     }
-    Write-PSFMessage -Message "Object is a $ObjectType"
-    Write-PSFMessage -Message "Getting permissions for $ObjectURL"
+    Write-PSFMessage -Message   "Object is a $ObjectType"
+    Write-PSFMessage -Message   "Getting permissions for $ObjectURL"
 
     #Get permissions assigned to the object
     Get-PnPProperty -ClientObject $Object -Property HasUniqueRoleAssignments, RoleAssignments
@@ -60,7 +60,7 @@ Function Get-PnPPermissions {
 
     #Loop through each permission assigned and extract details
     $PermissionCollection = @()
-    Write-PSFMessage -Message "Object has $($Object.RoleAssignments.count) permissions"
+    Write-PSFMessage -Message   "Object has $($Object.RoleAssignments.count) permissions"
     $Object.RoleAssignments | ForEach-Object { Get-PnPProperty -ClientObject $_ -Property RoleDefinitionBindings, Member }
     Foreach ($RoleAssignment in $Object.RoleAssignments) {
         #Get the Permission Levels assigned and Member
@@ -78,64 +78,84 @@ Function Get-PnPPermissions {
         #Leave Principals with no Permissions
         If ($PermissionLevels.Length -eq 0) { Continue }
 
-        # Login Name
-        $loginName = $RoleAssignment.Member.LoginName
-
-        # get user or group members
+        #Get SharePoint group members
         switch ($PermissionType) {
             "SharePointGroup" {
-                # Here we have 2 cases (SharePoint groups cannot be nested!)
-                # user is member of SP group
-                # user is member of a group that is member of SP group
                 #Get Group Members
+                Write-PSFMessage -Message   "Getting Members of SharePoint group: $($RoleAssignment.Member.LoginName)"
 
-                Write-PSFMessage -Message "Getting Members of SharePoint group: $($loginName)"
-                $groupMembers = Get-SPOSharePointGroupMember -LoginName $loginName
+                #Caching group members
+                if (($Script:Groups.Name | Where-Object {$_.Type -eq 'SharePointGroup'} )-notcontains $RoleAssignment.Member.LoginName ) {
+                    $GroupMembers = Get-PnPGroupMember -Identity $RoleAssignment.Member.LoginName
+                    $Script:Groups += [PSCustomObject]@{
+                        Name    = $RoleAssignment.Member.LoginName
+                        Type    = 'SharePointGroup'
+                        Members = $GroupMembers
+                    }
+                    Write-PSFMessage -Message   "Members added to cache"
+                }
+                else {
+                    $GroupMembers = ($Script:Groups | Where-Object { $_.Name -eq $RoleAssignment.Member.LoginName -and $_.Type -eq 'SharePointGroup'}).Members
+                    Write-PSFMessage -Message   "Members retrieved from cache"
+                }
 
-                # Permissions for users in SharePoint Group
-                $permissionCollection += [PSCustomObject]@{
+                #Leave Empty Groups
+                If ($GroupMembers.count -eq 0) { Continue }
+
+                $GroupUsers = ($GroupMembers | Select-Object -ExpandProperty Title) -join ","
+
+                #Add the Data to Object
+                $Permissions = [PSCustomObject]@{
                     Object               = $ObjectType
                     Title                = $ObjectTitle
                     URL                  = $ObjectURL
                     HasUniquePermissions = $HasUniquePermissions
-                    Users                = $groupMembers.Users -join ","
+                    Users                = $GroupUsers
                     Type                 = $PermissionType
                     Permissions          = $PermissionLevels
                     GrantedThrough       = "SharePoint Group: $($RoleAssignment.Member.LoginName)"
                 }
-
-                # Permission for Security Groups in SharePoint Group
-                foreach ($secGroup in $groupMembers.SecurityGroups) {
-                    $mgGroup = Get-SPOmgGroupTransitiveMember -GroupId $secGroup
-                    $permissionCollection += [PSCustomObject]@{
-                        Object               = $ObjectType
-                        Title                = $ObjectTitle
-                        URL                  = $ObjectURL
-                        HasUniquePermissions = $HasUniquePermissions
-                        Users                = $mgGroup.Users -join ","
-                        Type                 = 'Security Group'
-                        Permissions          = $PermissionLevels
-                        GrantedThrough       = $mgGroup.DisplayName
-                    }
-                }
             }
             "SecurityGroup" {
-                $mgGroup = Get-SPOmgGroupTransitiveMember -GroupId $secGroup
-                $permissionCollection += [PSCustomObject]@{
+                #Get Group Members
+                Write-PSFMessage -Message   "Getting Members of Azure AD group: $($RoleAssignment.Member.Title)"
+
+                #Caching group members
+                if (($Script:Groups.Name | Where-Object {$_.Type -eq 'SecurityGroup'} )-notcontains $RoleAssignment.Member.Title ) {
+                    $GroupMembers = Get-GApiGroupMember -GroupName ($RoleAssignment.Member.Title -replace '\sMembers$', '')
+                    $Script:Groups += [PSCustomObject]@{
+                        Name    = $RoleAssignment.Member.Title
+                        Type    = 'SecurityGroup'
+                        Members = $GroupMembers
+                    }
+                    Write-PSFMessage -Message   "Members added to cache"
+                }
+                else {
+                    $GroupMembers = ($Script:Groups | Where-Object { $_.Name -eq $RoleAssignment.Member.Title -and $_.Type -eq 'SecurityGroup'}).Members
+                    Write-PSFMessage -Message   "Members retrieved from cache"
+                }
+
+                #Leave Empty Groups
+                If ($GroupMembers.count -eq 0) { Continue }
+
+                $GroupUsers = $GroupMembers -join ","
+
+                #Add the Data to Object
+                $Permissions = [PSCustomObject]@{
                     Object               = $ObjectType
                     Title                = $ObjectTitle
                     URL                  = $ObjectURL
                     HasUniquePermissions = $HasUniquePermissions
-                    Users                = $mgGroup.Users -join ","
-                    Type                 = 'Security Group'
+                    Users                = $GroupUsers
+                    Type                 = $PermissionType
                     Permissions          = $PermissionLevels
-                    GrantedThrough       = $mgGroup.DisplayName
+                    GrantedThrough       = "Azure AD Group: $($RoleAssignment.Member.Title)"
                 }
             }
             Default {
                 #Add the Data to Object (most probably a user)
-                Write-PSFMessage -Message "Adding permissions for $($RoleAssignment.Member.Title)"
-                $permissionCollection += [PSCustomObject]@{
+                Write-PSFMessage -Message   "Adding permissions for $($RoleAssignment.Member.Title)"
+                $Permissions = [PSCustomObject]@{
                     Object               = $ObjectType
                     Title                = $ObjectTitle
                     URL                  = $ObjectURL
@@ -147,9 +167,9 @@ Function Get-PnPPermissions {
                 }
             }
         }
-
+        $PermissionCollection += $Permissions
     }
     #Export Permissions to CSV File
-    Write-PSFMessage -Message "Appending Report: $ReportFile"
+    Write-PSFMessage -Message   "Appending Report: $ReportFile"
     $PermissionCollection | Export-Csv $ReportFile -NoTypeInformation -Append
 }

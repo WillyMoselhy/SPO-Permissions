@@ -1,30 +1,26 @@
 function Get-SPOmgGroupTransitiveMember {
     [CmdletBinding()]
     param (
-        [string] $GroupEmail
+        [string] $GroupId
     )
 
     # Checking if group members are already cached
-    if ($script:Groups.Name -contains $GroupEmail) {
-        $groupMembers = ($Script:Groups | Where-Object { $_.Name -eq $GroupEmail -and $_.Type -eq 'SecurityGroup' }).Members
-        Write-PSFMessage -Message "Members retrieved from cache"
+    if($script:mgGroups[$GroupId]){
+        $mgGroup = $script:mgGroups[$GroupId]
+        Write-PSFMessage -Message "MG Group retrieved from cache"
     }
-    else {
-        #Get Group
-        Write-PSFMessage -Message "Resolving group $GroupEmail"
-        $group = Get-MgGroup -Search "Mail:$GroupEmail" -ConsistencyLevel eventual
-        $groupMembers = (Get-MgGroupTransitiveMember -GroupId $group.Id -Property displayName).AdditionalProperties.displayName
-
-        # Add members to cache
-        $Script:Groups += [PSCustomObject]@{
-            Name    = $RoleAssignment.Member.Title
-            Type    = 'SecurityGroup'
-            Members = $groupMembers
+    else{
+        $group = Get-MgGroup -GroupId $GroupId -Property displayName
+        $users = Get-MgGroupTransitiveMember -GroupId $GroupId -Property userPrincipalName
+        $mgGroup = [PSCustomObject]@{
+            DisplayName = $group.DisplayName
+            Users = $users.AdditionalProperties.userPrincipalName
         }
-        Write-PSFMessage -Message "Members added to cache"
+
+        # Add to cache
+        $script:mgGroups[$GroupId] = $mgGroup
+        Write-PSFMessage -Message "Members added to cache: {0} - {1} users" -StringValues $group.DisplayName,$users.count
     }
-
     #return list of group members
-    $groupMembers
-
+    $mgGroup
 }

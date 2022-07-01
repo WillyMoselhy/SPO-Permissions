@@ -1,1 +1,2 @@
-$script:Groups = @() # TODO:This should be a hash table
+$script:SharePointGroups = @{} # Hash table for SharePoint groups members cache
+$script:mgGroups = @{} # Hash table for AAD Groups members cache

@@ -18,31 +18,25 @@ Function Get-PnPListPermission() {
         , "Master Docs", "Master Page Gallery", "MicroFeed", "NintexFormXml", "Quick Deploy Items", "Relationships List", "Reusable Content", "Reporting Metadata", "Reporting Templates", "Search Config List", "Site Assets", "Preservation Hold Library",
         "Site Pages", "Solution Gallery", "Style Library", "Suggested Content Browser Locations", "Theme Gallery", "TaxonomyHiddenList", "User Information List", "Web Part Gallery", "wfpub", "wfsvc", "Workflow History", "Workflow Tasks", "Pages")
 
-    $Counter = 0
     #Get all lists from the web
-    ForEach ($List in $Lists) {
-        #Exclude System Lists
-        If ($List.Hidden -eq $False -and $ExcludedLists -notcontains $List.Title) {
-            $Counter++
-            Write-Progress -PercentComplete ($Counter / ($Lists.Count) * 100) -Activity "Exporting Permissions from List '$($List.Title)' in $($Web.URL)" -Status "Processing Lists $Counter of $($Lists.Count)"
+    ForEach ($List in ($Lists | Where-Object { -Not $_.Hidden -and $_.Title -notin $ExcludedLists })) {
 
-            #Get Item Level Permissions if 'ScanItemLevel' switch present
-            If ($ScanItemLevel) {
-                #Get List Items Permissions
-                Get-PnPListItemsPermission -ReportFile $ReportFile -List $List -IncludeInheritedPermissions:$IncludeInheritedPermissions
-            }
+        #Get Item Level Permissions if 'ScanItemLevel' switch present
+        If ($ScanItemLevel) {
+            #Get List Items Permissions
+            Get-PnPListItemsPermission -ReportFile $ReportFile -List $List -IncludeInheritedPermissions:$IncludeInheritedPermissions
+        }
 
-            #Get Lists with Unique Permissions or Inherited Permissions based on 'IncludeInheritedPermissions' switch
-            If ($IncludeInheritedPermissions) {
+        #Get Lists with Unique Permissions or Inherited Permissions based on 'IncludeInheritedPermissions' switch
+        If ($IncludeInheritedPermissions) {
+            Get-PnPPermissions -Object $List -ReportFile $ReportFile
+        }
+        Else {
+            #Check if List has unique permissions
+            $HasUniquePermissions = Get-PnPProperty -ClientObject $List -Property HasUniqueRoleAssignments
+            If ($HasUniquePermissions -eq $True) {
+                #Call the function to check permissions
                 Get-PnPPermissions -Object $List -ReportFile $ReportFile
-            }
-            Else {
-                #Check if List has unique permissions
-                $HasUniquePermissions = Get-PnPProperty -ClientObject $List -Property HasUniqueRoleAssignments
-                If ($HasUniquePermissions -eq $True) {
-                    #Call the function to check permissions
-                    Get-PnPPermissions -Object $List -ReportFile $ReportFile
-                }
             }
         }
     }
