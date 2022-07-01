@@ -106,6 +106,7 @@ Function Get-PnPPermissions {
 
                 # Permission for Security Groups in SharePoint Group
                 foreach ($secGroup in $groupMembers.SecurityGroups) {
+                    Write-PSFMessage -Message "Getting Members of Security Group: $($secGroup) for SharePoint Group: $loginName"
                     $mgGroup = Get-SPOmgGroupTransitiveMember -GroupId $secGroup
                     $permissionCollection += [PSCustomObject]@{
                         Object               = $ObjectType
@@ -120,6 +121,7 @@ Function Get-PnPPermissions {
                 }
             }
             "SecurityGroup" {
+                Write-PSFMessage -Message "Getting Members of Security Group: $($loginName)"
                 $mgGroup = Get-SPOmgGroupTransitiveMember -GroupId $secGroup
                 $permissionCollection += [PSCustomObject]@{
                     Object               = $ObjectType
