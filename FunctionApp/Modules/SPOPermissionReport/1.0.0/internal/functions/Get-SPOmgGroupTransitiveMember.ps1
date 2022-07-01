@@ -5,14 +5,14 @@ function Get-SPOmgGroupTransitiveMember {
     )
 
     # Checking if group members are already cached
-    if ($script:Groups.Name -contains $Email) {
-        $groupMembers = ($Script:Groups | Where-Object { $_.Name -eq $Email -and $_.Type -eq 'SecurityGroup' }).Members
+    if ($script:Groups.Name -contains $GroupEmail) {
+        $groupMembers = ($Script:Groups | Where-Object { $_.Name -eq $GroupEmail -and $_.Type -eq 'SecurityGroup' }).Members
         Write-PSFMessage -Message "Members retrieved from cache"
     }
     else {
         #Get Group
-        Write-PSFMessage -Message "Resolving group $Email"
-        $group = Get-MgGroup -Search "Mail:$Email" -ConsistencyLevel eventual
+        Write-PSFMessage -Message "Resolving group $GroupEmail"
+        $group = Get-MgGroup -Search "Mail:$GroupEmail" -ConsistencyLevel eventual
         $groupMembers = (Get-MgGroupTransitiveMember -GroupId $group.Id -Property displayName).AdditionalProperties.displayName
 
         # Add members to cache
