@@ -7,7 +7,7 @@ function Get-SPOmgGroupTransitiveMember {
     # Checking if group members are already cached
     if($script:mgGroups[$GroupId]){
         $mgGroup = $script:mgGroups[$GroupId]
-        Write-PSFMessage -Message "MG Group retrieved from cache"
+        Write-PSFMessage -Message "MG Group retrieved from cache {0}" -StringValues $mgGroup.DisplayName
     }
     else{
         # TODO: Add support for Service Principals (currently available in mg Beta)
