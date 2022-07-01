@@ -54,6 +54,10 @@ function Update-SPOPermissionGraphAPIToken {
     }
     else {
         Write-PSFMessage -Message "Graph API token is not expired"
+        if(-not (Get-MgContext)){
+            Write-PSFMessage -Message "Graph API not connected. connecting..."
+            Connect-MgGraph -AccessToken $env:mgToken
+        }
     }
     Write-PSFMessage -Message "Graph API token will expire in {0:N0} seconds" -StringValues $timeToExpire.TotalSeconds
 }
