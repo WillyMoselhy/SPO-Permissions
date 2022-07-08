@@ -14,7 +14,8 @@ function Get-SPOSharePointGroupMember {
         # Group is not cached
         $pnpGroupMembers = Get-PnPGroupMember -Group $LoginName
 
-        $users = ($pnpGroupMembers | Where-Object { $_.PrincipalType -eq 'User' }).UserPrincipalName
+        $users = ($pnpGroupMembers | Where-Object { $_.PrincipalType -eq 'User' -and $_.UserPrincipalName}).UserPrincipalName
+        $users += ($pnpGroupMembers | Where-Object { $_.PrincipalType -eq 'User' -and -Not $_.UserPrincipalName}).Title
         if($pnpGroupMembers | Where-Object { $_.PrincipalType -eq 'SecurityGroup' }){
             $securityGroups = ($pnpGroupMembers | Where-Object { $_.PrincipalType -eq 'SecurityGroup' }).LoginName -replace ".*([\da-zA-Z]{8}-([\da-zA-Z]{4}-){3}[\da-zA-Z]{12}).*", '$1'
         }
