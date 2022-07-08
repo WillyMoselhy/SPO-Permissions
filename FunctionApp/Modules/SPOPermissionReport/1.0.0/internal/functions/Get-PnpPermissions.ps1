@@ -109,12 +109,21 @@ Function Get-PnPPermissions {
                 foreach ($secGroup in $groupMembers.SecurityGroups) {
                     Write-PSFMessage -Message "Getting Members of Security Group: $($secGroup) for SharePoint Group: $loginName"
                     $mgGroup = Get-SPOmgGroupTransitiveMember -GroupId $secGroup
+                    if(-Not $mgGroup.DisplayName ){ # Handling non existing groups (Global Administrator / SharePoint Administrator / etc..)
+                        $users = $admin.Title
+                    }
+                    elseif ($mgGroup.Users.Count -eq 0){ # Handling empty groups
+                        $users = $mgGroup.DisplayName
+                    }
+                    else{
+                        $users = $mgGroup.Users -join ","
+                    }
                     $permissionCollection += [PSCustomObject]@{
                         Object               = $ObjectType
                         Title                = $ObjectTitle
                         URL                  = $ObjectURL
                         HasUniquePermissions = $HasUniquePermissions
-                        Users                = $mgGroup.Users -join ","
+                        Users                = $users
                         Type                 = 'Security Group'
                         Permissions          = $PermissionLevels
                         SharePointGroup      = $RoleAssignment.Member.LoginName
@@ -125,12 +134,21 @@ Function Get-PnPPermissions {
             "SecurityGroup" {
                 Write-PSFMessage -Message "Getting Members of Security Group: $($loginName)"
                 $mgGroup = Get-SPOmgGroupTransitiveMember -GroupId $secGroup
+                if(-Not $mgGroup.DisplayName ){ # Handling non existing groups (Global Administrator / SharePoint Administrator / etc..)
+                    $users = $admin.Title
+                }
+                elseif ($mgGroup.Users.Count -eq 0){ # Handling empty groups
+                    $users = $mgGroup.DisplayName
+                }
+                else{
+                    $users = $mgGroup.Users -join ","
+                }
                 $permissionCollection += [PSCustomObject]@{
                     Object               = $ObjectType
                     Title                = $ObjectTitle
                     URL                  = $ObjectURL
                     HasUniquePermissions = $HasUniquePermissions
-                    Users                = $mgGroup.Users -join ","
+                    Users                = $users
                     Type                 = 'Security Group'
                     Permissions          = $PermissionLevels
                     SharePointGroup      = ""

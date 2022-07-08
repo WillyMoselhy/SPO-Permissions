@@ -40,14 +40,23 @@ function Start-SPOPermissionCollection {
                 "SecurityGroup" {
                     $groupId = $admin.LoginName -replace ".*([\da-zA-Z]{8}-([\da-zA-Z]{4}-){3}[\da-zA-Z]{12}).*",'$1'
                     $mgGroup = Get-SPOmgGroupTransitiveMember -GroupId $groupId
+                    if(-Not $mgGroup.DisplayName ){ # Handling non existing groups (Global Administrator / SharePoint Administrator / etc..)
+                        $users = $admin.Title
+                    }
+                    elseif ($mgGroup.Users.Count -eq 0){ # Handling empty groups
+                        $users = $mgGroup.DisplayName
+                    }
+                    else{
+                        $users = $mgGroup.Users -join ","
+                    }
                     [PSCustomObject]@{
-                        Object               = $ObjectType
-                        Title                = $ObjectTitle
-                        URL                  = $ObjectURL
-                        HasUniquePermissions = $HasUniquePermissions
-                        Users                = $mgGroup.Users -join ","
+                        Object               = "Site Collection"
+                        Title                = $web.Title
+                        URL                  = $web.URL
+                        HasUniquePermissions = "TRUE"
+                        Users                = $users
                         Type                 = 'Security Group'
-                        Permissions          = $PermissionLevels
+                        Permissions          = "Site Owner"
                         SharePointGroup      = ""
                         GrantedThrough       = $mgGroup.DisplayName
                     }
