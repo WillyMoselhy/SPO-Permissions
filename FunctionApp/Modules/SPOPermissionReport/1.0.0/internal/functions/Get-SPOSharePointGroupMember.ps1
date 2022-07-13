@@ -14,14 +14,23 @@ function Get-SPOSharePointGroupMember {
         # Group is not cached
         $pnpGroupMembers = Get-PnPGroupMember -Group $LoginName
 
-        $users = ($pnpGroupMembers | Where-Object { $_.PrincipalType -eq 'User' -and $_.UserPrincipalName}).UserPrincipalName
-        $users += ($pnpGroupMembers | Where-Object { $_.PrincipalType -eq 'User' -and -Not $_.UserPrincipalName}).Title # This is to capture system Accounts
-        $users += ($pnpGroupMembers | Where-Object { $_.LoginName -like "*|rolemanager|*"}).Title # This is to capture rolemanager accounts
-        if($pnpGroupMembers | Where-Object { $_.PrincipalType -eq 'SecurityGroup' -and $_.LoginName -like "*|federateddirectoryclaimprovider|*" }){
-            $securityGroups = ($pnpGroupMembers | Where-Object { $_.PrincipalType -eq 'SecurityGroup' }).LoginName -replace ".*([\da-zA-Z]{8}-([\da-zA-Z]{4}-){3}[\da-zA-Z]{12}).*", '$1'
-        }
-        else{
-            $securityGroups = $null
+        $users = @()
+        $securityGroups = @()
+        foreach ($member in $pnpGroupMembers){
+            switch -Wildcard ($member.LoginName) {
+                "*|membership|*" {
+                    $users += $member.UserPrincipalName
+                }
+                "*|federateddirectoryclaimprovider|*" {
+                    $securityGroups += $member.LoginName -replace ".*([\da-zA-Z]{8}-([\da-zA-Z]{4}-){3}[\da-zA-Z]{12}).*", '$1'
+                }
+                "*|tenant|*" {
+                    $users += $member.Title # TODO: Use Get-mgDirectoryRoleMember to expand AAD Roles like Global Admin
+                }
+                Default {
+                    $users += $member.Title
+                }
+            }
         }
 
         $groupMembers = [PSCustomObject]@{
